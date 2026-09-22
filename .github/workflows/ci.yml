@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: ติดตั้ง dependency
+        run: pip install PyYAML openpyxl
+
+      # ข้อมูลผิดต้องล้มที่นี่ ก่อนสร้างไฟล์แม้แต่ไฟล์เดียว
+      - name: ตรวจความถูกต้องของข้อมูล
+        run: python -m evbuild validate
+
+      - name: เทสต์ (กฎ · การตัดสิน · การตรวจ · ความปลอดภัย · การถดถอย)
+        run: python -m unittest discover -s tests -t . -v
+
+      # ยืนยันว่าไม่มีข้อสรุปใดหายหรือเพี้ยนจากข้อมูลเดิม 1170 ช่อง
+      - name: เทียบกับระบบเดิม
+        run: python tools/diff_legacy.py
+
+      - name: สร้าง output (ยกเว้น pdf ที่ต้องใช้ฟอนต์ไทย)
+        run: python -m evbuild build xlsx html csv
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: outputs
+          path: outputs/

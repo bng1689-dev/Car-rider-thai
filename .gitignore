@@ -1,3 +1,7 @@
+# ผลลัพธ์ที่สร้างใหม่ได้เสมอด้วย `python -m evbuild build`
+outputs/
 ev-project/outputs/
+
 __pycache__/
 *.pyc
+.pytest_cache/

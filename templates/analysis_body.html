@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+  size: A4;
+  margin: 2cm 1.8cm 2cm 1.8cm;
+  @bottom-center {
+    content: "หน้า " counter(page) " / " counter(pages);
+    font-family: 'Sarabun'; font-size: 9pt; color: #888;
+  }
+  @bottom-right {
+    content: "เอกสารวิเคราะห์ภายใน";
+    font-family: 'Sarabun'; font-size: 8pt; color: #b8962e;
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Sarabun', sans-serif;
+  font-size: 11pt; line-height: 1.55; color: #1a1a1a;
+}
+.cover {
+  text-align: center; padding-top: 3cm;
+  page-break-after: always;
+}
+.cover .kicker {
+  color: #b8962e; font-size: 12pt; letter-spacing: 2px;
+  font-weight: 700; margin-bottom: 8px;
+}
+.cover h1 {
+  color: #16244d; font-size: 26pt; font-weight: 700;
+  line-height: 1.3; margin: 16px 0;
+}
+.cover .sub {
+  color: #444; font-size: 13pt; margin-bottom: 30px;
+}
+.cover .divider {
+  width: 60%; height: 3px; margin: 24px auto;
+  background: linear-gradient(90deg, transparent, #b8962e, transparent);
+}
+.cover-box {
+  border: 1.5px solid #16244d; border-radius: 6px;
+  padding: 20px 28px; margin: 40px auto 0; width: 78%;
+  text-align: left; background: #f8f9fc;
+}
+.cover-box table { width: 100%; font-size: 11pt; }
+.cover-box td { padding: 5px 0; vertical-align: top; }
+.cover-box td.label { color: #16244d; font-weight: 700; width: 32%; }
+
+h2 {
+  color: #16244d; font-size: 16pt; font-weight: 700;
+  margin: 22px 0 10px; padding-bottom: 6px;
+  border-bottom: 2px solid #b8962e;
+}
+h2 .num {
+  display: inline-block; background: #16244d; color: #fff;
+  width: 26px; height: 26px; line-height: 26px; text-align: center;
+  border-radius: 4px; font-size: 12pt; margin-right: 8px;
+}
+h3 {
+  color: #1e3a6e; font-size: 12.5pt; font-weight: 700;
+  margin: 16px 0 6px;
+}
+p { margin-bottom: 8px; text-align: justify; }
+.lead {
+  background: #f2f5fb; border-left: 4px solid #16244d;
+  padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0;
+}
+.tag {
+  display: inline-block; padding: 1px 7px; border-radius: 3px;
+  font-size: 9pt; font-weight: 700; margin: 0 2px;
+}
+.tag-grab { background: #e0f5e9; color: #00803a; }
+.tag-bolt { background: #e3f5ec; color: #1a9c5f; }
+.tag-warn { background: #fdf2d9; color: #a67a00; }
+
+table.data {
+  width: 100%; border-collapse: collapse;
+  margin: 10px 0 16px; font-size: 9.5pt;
+}
+table.data th {
+  background: #16244d; color: #fff; padding: 7px 6px;
+  text-align: left; font-weight: 700; border: 0.5px solid #16244d;
+}
+table.data th.c { text-align: center; }
+table.data td {
+  padding: 6px; border: 0.5px solid #ccd2e0;
+  vertical-align: top;
+}
+table.data tr:nth-child(even) td { background: #f5f7fb; }
+table.data td.c { text-align: center; }
+table.data td.b { font-weight: 700; color: #16244d; }
+table.data .hl { color: #b8962e; font-weight: 700; }
+.yes { color: #00803a; font-weight: 700; }
+.no { color: #bbb; }
+
+.compare-head {
+  background: #b8962e !important; color: #fff !important;
+}
+.grab-head { background: #00803a !important; }
+.bolt-head { background: #1a9c5f !important; }
+
+.note-box {
+  background: #fdf9ee; border: 1px solid #e8d9a8;
+  border-radius: 5px; padding: 12px 16px; margin: 12px 0;
+  font-size: 10pt;
+}
+.note-box strong { color: #a67a00; }
+.warn-box {
+  background: #fef4f4; border: 1px solid #f0c8c8;
+  border-radius: 5px; padding: 12px 16px; margin: 12px 0;
+  font-size: 10pt;
+}
+.warn-box strong { color: #c0392b; }
+
+ul.clean { list-style: none; margin: 8px 0; }
+ul.clean li {
+  padding: 3px 0 3px 20px; position: relative; font-size: 10.5pt;
+}
+ul.clean li:before {
+  content: "▸"; color: #b8962e; position: absolute; left: 4px;
+  font-weight: 700;
+}
+ul.src { list-style: none; font-size: 9pt; color: #555; }
+ul.src li { padding: 2px 0 2px 16px; position: relative; }
+ul.src li:before { content: "—"; position: absolute; left: 0; color: #999; }
+
+.keyfind {
+  display: flex; gap: 10px; margin: 14px 0;
+}
+.kf-card {
+  flex: 1; border: 1px solid #ccd2e0; border-radius: 6px;
+  padding: 12px; background: #f8f9fc;
+}
+.kf-card .n { font-size: 20pt; font-weight: 700; color: #b8962e; }
+.kf-card .n.navy { color: #16244d; }
+.kf-card .l { font-size: 9pt; color: #555; }
+
+.pagebreak { page-break-before: always; }
+.footer-sig {
+  margin-top: 30px; padding-top: 12px;
+  border-top: 1px solid #ccc; font-size: 9pt; color: #888;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="kicker">เอกสารวิเคราะห์เปรียบเทียบ</div>
+  <h1>การคัดเกรดรถและหมวดบริการ<br>ของแอปพลิเคชันเรียกรถในประเทศไทย</h1>
+  <div class="sub">Grab &amp; Bolt — Vehicle Category &amp; Driver Payout Analysis</div>
+  <div class="divider"></div>
+  <div class="cover-box">
+    <table>
+      <tr><td class="label">ขอบเขต</td><td>เปรียบเทียบเงื่อนไขการคัดเกรดรถ หมวดบริการ และอัตราผลตอบแทนคนขับ ระหว่าง Grab กับ Bolt</td></tr>
+      <tr><td class="label">โฟกัส</td><td>ประเภทรถที่รับสมัคร · เกณฑ์อายุรถ · model list · commission / อัตราผลตอบแทน</td></tr>
+      <tr><td class="label">ข้อมูล ณ</td><td>กันยายน 2568 (2025)</td></tr>
+      <tr><td class="label">ประเภทข้อมูล</td><td>Grab = ยืนยันจาก official list · Bolt = ผสมระหว่างเกณฑ์ทางการ + inference จาก spec</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============ 1. บทสรุป ============ -->
+<h2><span class="num">1</span>บทสรุปผู้บริหาร (Executive Summary)</h2>
+<p class="lead">
+Grab และ Bolt ใช้ <strong>ปรัชญาการจัดหมวดรถที่ต่างกันโดยสิ้นเชิง</strong> —
+Grab ใช้ <strong>model list</strong> (รายชื่อรุ่นที่กำหนดไว้ล่วงหน้า) เป็นเกณฑ์หลักในการจัดหมวดพรีเมียม
+ขณะที่ Bolt ใช้ระบบ <strong>auto-categorize จาก spec</strong> (อายุรถ ประตู ที่นั่ง ระยะฐานล้อ)
+ทำให้รถถูกจัดหมวดอัตโนมัติเมื่อเพิ่มเข้าระบบ ยกเว้นหมวด Comfort ที่ Bolt มี model list กำกับเช่นกัน
+</p>
+
+<div class="keyfind">
+  <div class="kf-card"><div class="n navy">25%</div><div class="l">Grab หักค่าคอมมิชชัน<br>(คนขับได้ ~75%)</div></div>
+  <div class="kf-card"><div class="n">15%</div><div class="l">Bolt หักค่าคอมมิชชัน<br>(คนขับได้ ~85%)</div></div>
+  <div class="kf-card"><div class="n navy">6 : 5</div><div class="l">จำนวนหมวดบริการ<br>Grab : Bolt</div></div>
+  <div class="kf-card"><div class="n">≤9 ปี</div><div class="l">เกณฑ์อายุรถพื้นฐาน<br>ทั้งสองแอป</div></div>
+</div>
+
+<p>
+ในแง่ <strong>อัตราผลตอบแทนคนขับ</strong> Bolt ได้เปรียบชัดเจน เพราะหักค่าคอมมิชชันเพียง 15%
+(เทียบกับ Grab 25%) หมายความว่าจากค่าโดยสาร 100 บาท คนขับ Bolt ได้ 85 บาท ส่วนคนขับ Grab ได้ 75 บาท
+(และยังถูกหักภาษี ณ ที่จ่าย 3% เพิ่ม) แต่ Grab มีปริมาณงาน (demand) และระบบ incentive/การันตีที่หนากว่า
+จึงต้องพิจารณาควบคู่กับ <strong>ปริมาณงานจริง</strong> ในพื้นที่นั้นๆ
+</p>
+
+<!-- ============ 2. Grab ============ -->
+<h2><span class="num">2</span>หมวดบริการและการคัดเกรดรถ — Grab</h2>
+<p>
+Grab กำหนดเกณฑ์พื้นฐาน: อายุรถ <strong>ไม่เกิน 9 ปี</strong>, คนขับอายุ 22–70 ปี, สัญชาติไทย,
+มีใบขับขี่สาธารณะ, ไม่มีประวัติอาชญากรรม และ<strong>ห้ามรถกระบะ</strong>
+หมวดพรีเมียมทุกหมวดต้องเป็นรุ่นที่อยู่ใน <span class="tag tag-grab">MODEL LIST</span> ที่ Grab กำหนดเท่านั้น
+</p>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width:16%">หมวดบริการ</th>
+      <th style="width:24%">เงื่อนไขรถ</th>
+      <th style="width:22%">เงื่อนไขคนขับ</th>
+      <th class="c" style="width:18%">อัตราผลตอบแทน<br>(หลังหักคอม)</th>
+      <th style="width:20%">หมายเหตุ</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="b">GrabCar</td>
+      <td>รุ่นใดก็ได้ · 4 ประตู · ≥4 ที่นั่ง · ≤9 ปี</td>
+      <td>ใบขับขี่สาธารณะ</td>
+      <td class="c hl">~75%<br><span style="font-size:8pt;color:#888">คอม 25%</span></td>
+      <td>หมวดมาตรฐาน รับรถทั่วไป</td>
+    </tr>
+    <tr>
+      <td class="b">GrabCar Lady</td>
+      <td>เหมือน GrabCar</td>
+      <td>คนขับหญิง (รวม Trans)</td>
+      <td class="c hl">~75%</td>
+      <td>ผู้โดยสารเลือกคนขับหญิง</td>
+    </tr>
+    <tr>
+      <td class="b">GrabCar Premium</td>
+      <td class="hl">ต้องเป็นรุ่นซีดานหรูใน list</td>
+      <td>ใบขับขี่สาธารณะ + rating สูง</td>
+      <td class="c hl">~75%<br><span style="font-size:8pt;color:#888">ค่าโดยสารสูงกว่า</span></td>
+      <td>รายได้/วันสูงถึง 2,000–3,000฿</td>
+    </tr>
+    <tr>
+      <td class="b">GrabSUV</td>
+      <td class="hl">ต้องเป็นรุ่น SUV ใน list</td>
+      <td>ใบขับขี่สาธารณะ</td>
+      <td class="c hl">~75%</td>
+      <td>SUV 5–7 ที่นั่ง</td>
+    </tr>
+    <tr>
+      <td class="b">GrabVan</td>
+      <td>รถตู้ ≥10 ที่นั่ง + ป้ายเหลือง</td>
+      <td>ใบขับขี่สาธารณะ</td>
+      <td class="c hl">~75%<br><span style="font-size:8pt;color:#888">ค่าโดยสาร 2 เท่า</span></td>
+      <td>ต้องจดทะเบียนรถสาธารณะ</td>
+    </tr>
+    <tr>
+      <td class="b">GrabExecutive</td>
+      <td>3 ระดับ: Lite / M / L (รถหรู)</td>
+      <td>ผ่านฝึกอบรม + ยูนิฟอร์ม</td>
+      <td class="c hl">~75%<br><span style="font-size:8pt;color:#888">ค่าโดยสาร 2,500–3,400฿</span></td>
+      <td>ระดับบนสุด บริการหรู</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note-box">
+<strong>วิธีคิดค่าคอมมิชชัน Grab:</strong> ค่าคอม = (ค่าโดยสาร × 25) ÷ 100
+เช่น ค่าโดยสาร 200 บาท → หักคอม 50 บาท คนขับได้ 150 บาท → แล้วหักภาษี ณ ที่จ่าย 3% อีก
+โดยโอนเข้ากระเป๋าเงินคนขับรายสัปดาห์
+</div>
+
+<!-- ============ 3. Bolt ============ -->
+<div class="pagebreak"></div>
+<h2><span class="num">3</span>หมวดบริการและการคัดเกรดรถ — Bolt</h2>
+<p>
+Bolt ใช้ระบบ <strong>auto-categorize</strong> — เมื่อเพิ่มรถเข้าระบบ ระบบจะจัดหมวดให้อัตโนมัติตาม spec
+(อายุ ประตู ที่นั่ง) เกณฑ์พื้นฐาน: อายุรถ <strong>ไม่เกิน 9 ปี</strong>, 4 ประตู, ≥4 ที่นั่ง (ไม่รวมคนขับ),
+ห้ามรถกระบะ จุดสำคัญคือ <strong>หมวด Comfort มี model list กำกับ</strong> และเกณฑ์อายุเข้มกว่าหมวดอื่น
+</p>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width:15%">หมวดบริการ</th>
+      <th style="width:28%">เงื่อนไขรถ</th>
+      <th class="c" style="width:12%">อายุรถ</th>
+      <th class="c" style="width:15%">model list?</th>
+      <th class="c" style="width:15%">อัตราผลตอบแทน</th>
+      <th style="width:15%">พื้นที่</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="b">Bolt / Economy</td>
+      <td>ซีดานเล็ก · 4 ประตู · ≥4 ที่นั่ง</td>
+      <td class="c">≤9 ปี</td>
+      <td class="c no">ไม่ใช้</td>
+      <td class="c hl">~85%</td>
+      <td>ทั่วประเทศ</td>
+    </tr>
+    <tr>
+      <td class="b">Ladies</td>
+      <td>เหมือน Economy</td>
+      <td class="c">≤9 ปี</td>
+      <td class="c no">ไม่ใช้</td>
+      <td class="c hl">~85%</td>
+      <td>ทั่วประเทศ</td>
+    </tr>
+    <tr>
+      <td class="b">Comfort</td>
+      <td class="hl">ซีดานใหญ่/SUV ที่อยู่ใน Comfort list · ระยะฐานล้อยาว</td>
+      <td class="c hl">≤5 ปี*</td>
+      <td class="c"><span class="yes">✓ ใช้ list</span></td>
+      <td class="c hl">~85%</td>
+      <td>เมืองใหญ่</td>
+    </tr>
+    <tr>
+      <td class="b">XL</td>
+      <td>6–9 ที่นั่ง</td>
+      <td class="c">≤9 ปี</td>
+      <td class="c no">ไม่ใช้</td>
+      <td class="c hl">~85%</td>
+      <td>กทม./ภูเก็ต</td>
+    </tr>
+    <tr>
+      <td class="b">Van</td>
+      <td>≥8 ที่นั่งผู้โดยสาร</td>
+      <td class="c">≤9 ปี</td>
+      <td class="c no">ไม่ใช้</td>
+      <td class="c hl">~85%</td>
+      <td>ภูเก็ตเท่านั้น</td>
+    </tr>
+    <tr>
+      <td class="b">Premium</td>
+      <td>รถที่ผ่านเกณฑ์ (premium list)</td>
+      <td class="c">≤9 ปี</td>
+      <td class="c"><span class="yes">✓ ใช้ list</span></td>
+      <td class="c hl">~85%</td>
+      <td>เมืองใหญ่</td>
+    </tr>
+    <tr>
+      <td class="b">Green</td>
+      <td>รถ EV / Hybrid ทุกรุ่น</td>
+      <td class="c">≤9 ปี</td>
+      <td class="c no">ไม่ใช้</td>
+      <td class="c hl">~85%</td>
+      <td>เปิดตัว เม.ย. 2567</td>
+    </tr>
+    <tr>
+      <td class="b">Motorbike</td>
+      <td>1 ที่นั่งผู้โดยสาร</td>
+      <td class="c">≤18 ปี</td>
+      <td class="c no">ไม่ใช้</td>
+      <td class="c hl">~85%</td>
+      <td>ทั่วประเทศ</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note-box">
+<strong>* หมายเหตุเกณฑ์อายุ Comfort:</strong> หน้าเอกสารทางการของ Bolt ประเทศไทยระบุ Comfort อายุ ≤5 ปี + ต้องอยู่ใน "List of Car models"
+แต่หน้า driver guide บางเวอร์ชันระบุ ≤9 ปี (ซีดานใหญ่/SUV) — <u>ควรตรวจสอบ Comfort list จริงในแอปตอนเพิ่มรถ</u>
+Reference ต่างประเทศ (ไต้หวัน) ใช้เกณฑ์ ระยะฐานล้อ (wheelbase) ≥2,650 มม. + คะแนน ≥4.8 + AR ≥50%
+</div>
+
+<div class="warn-box">
+<strong>ข้อจำกัดของ Bolt Comfort list:</strong> Bolt <u>ไม่เปิดเผยรายชื่อรุ่นใน Comfort list ต่อสาธารณะ</u>
+คนขับจะเห็นรายชื่อได้เฉพาะเมื่อ login เข้าระบบและเพิ่มรถแล้วเท่านั้น
+ต่างจาก Grab ที่เผยแพร่ model list บนเว็บ grabdriverth.com อย่างเปิดเผย
+</div>
+
+<!-- ============ 4. เปรียบเทียบ ============ -->
+<div class="pagebreak"></div>
+<h2><span class="num">4</span>ตารางเปรียบเทียบ Grab vs Bolt</h2>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width:24%">ประเด็น</th>
+      <th class="c grab-head" style="width:38%">GRAB</th>
+      <th class="c bolt-head" style="width:38%">BOLT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="b">ปรัชญาการจัดหมวด</td>
+      <td>Model list เป็นหลัก (กำหนดรุ่นล่วงหน้า)</td>
+      <td>Auto-categorize จาก spec + Comfort ใช้ list</td>
+    </tr>
+    <tr>
+      <td class="b">ค่าคอมมิชชัน</td>
+      <td class="hl">25%</td>
+      <td class="hl">15% (บาง source 10–15%)</td>
+    </tr>
+    <tr>
+      <td class="b">อัตราผลตอบแทนคนขับ</td>
+      <td>~75% ของค่าโดยสาร (− WHT 3%)</td>
+      <td class="hl">~85% ของค่าโดยสาร</td>
+    </tr>
+    <tr>
+      <td class="b">เกณฑ์อายุรถ (ทั่วไป)</td>
+      <td>≤9 ปี</td>
+      <td>≤9 ปี (Comfort ≤5 ปี)</td>
+    </tr>
+    <tr>
+      <td class="b">จำนวนหมวดบริการ</td>
+      <td>6 (Car/Lady/Premium/SUV/Van/Executive)</td>
+      <td>8 (Economy/Ladies/Comfort/XL/Van/Premium/Green/Motorbike)</td>
+    </tr>
+    <tr>
+      <td class="b">หมวด EV โดยเฉพาะ</td>
+      <td>ไม่มี (EV เข้าหมวดตามตัวถัง)</td>
+      <td class="hl">มี "Green" สำหรับ EV/Hybrid</td>
+    </tr>
+    <tr>
+      <td class="b">ความโปร่งใส model list</td>
+      <td class="hl">เปิดเผยบนเว็บ (grabdriverth.com)</td>
+      <td>ไม่เปิดเผย (เห็นในแอปเท่านั้น)</td>
+    </tr>
+    <tr>
+      <td class="b">รถกระบะ</td>
+      <td>ไม่รับ</td>
+      <td>ไม่รับ</td>
+    </tr>
+    <tr>
+      <td class="b">Motorbike / วินมอเตอร์ไซค์</td>
+      <td>มี (GrabBike)</td>
+      <td>มี (≤18 ปี)</td>
+    </tr>
+    <tr>
+      <td class="b">ค่าโดยสารต่อผู้บริโภค</td>
+      <td>มาตรฐานตลาด</td>
+      <td class="hl">ถูกกว่าเจ้าอื่น ~20%</td>
+    </tr>
+    <tr>
+      <td class="b">ปริมาณงาน / demand</td>
+      <td class="hl">สูง (market leader)</td>
+      <td>กำลังขยายตัว</td>
+    </tr>
+    <tr>
+      <td class="b">ระบบ incentive / การันตี</td>
+      <td class="hl">หนา (การันตีเฉลี่ยต่อรอบ)</td>
+      <td>มี แต่น้อยกว่า</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============ 5. วิเคราะห์ ============ -->
+<h2><span class="num">5</span>บทวิเคราะห์เชิงเปรียบเทียบ</h2>
+
+<h3>5.1 มุมมองด้านผลตอบแทน (Driver Economics)</h3>
+<p>
+หากดูเฉพาะ <strong>อัตราผลตอบแทนต่อค่าโดยสาร</strong> Bolt เหนือกว่าอย่างชัดเจน (85% เทียบ 75%)
+แต่ตัวเลขนี้<strong>ไม่ใช่ตัวชี้ขาด</strong> เพราะรายได้สุทธิ = อัตราผลตอบแทน × ปริมาณงาน × ค่าโดยสารเฉลี่ย
+Grab มีส่วนแบ่งตลาดและ demand ที่สูงกว่า บวกระบบ incentive/การันตีที่หนากว่า
+ทำให้ในบางพื้นที่/บางช่วงเวลา รายได้รวมของคนขับ Grab อาจสูงกว่าแม้ถูกหักคอมมากกว่า
+</p>
+
+<h3>5.2 มุมมองด้านการคัดเกรดรถ (Vehicle Classification)</h3>
+<p>
+Grab เข้มงวดเรื่อง model list สำหรับหมวดพรีเมียม ทำให้การจัดหมวดคาดเดาได้และตรวจสอบได้
+(เหมาะกับการวิเคราะห์เชิงระบบ) ส่วน Bolt ยืดหยุ่นกว่าด้วย auto-categorize
+แต่ความไม่โปร่งใสของ Comfort list ทำให้คนขับต้องทดลองเพิ่มรถเพื่อดูว่าเข้าหมวดใด
+</p>
+
+<h3>5.3 ข้อสังเกตเชิงระบบ (Systemic Note)</h3>
+<ul class="clean">
+  <li>Grab = <strong>closed list model</strong> → ควบคุมคุณภาพรถได้แน่นอน แต่ยืดหยุ่นน้อย</li>
+  <li>Bolt = <strong>spec-based + hybrid list</strong> → เปิดกว้างต่อรถรุ่นใหม่ (เช่น EV จีน) เข้าหมวดได้เร็ว</li>
+  <li>การมีหมวด <strong>Green</strong> ของ Bolt สะท้อนกลยุทธ์ดึงดูดคนขับ EV ในช่วง EV boom ของไทย</li>
+  <li>ความโปร่งใสของ list มีผลต่อ <strong>การวางแผนซื้อรถ</strong> ของคนขับที่หวังขับหมวดพรีเมียม</li>
+</ul>
+
+<!-- ============ 6. หมายเหตุ + อ้างอิง ============ -->
+<h2><span class="num">6</span>หมายเหตุและแหล่งอ้างอิง</h2>
+
+<div class="warn-box">
+<strong>ข้อจำกัดของข้อมูล:</strong> ข้อมูล Grab อ้างอิงจาก official model list ที่เผยแพร่ (ยืนยันได้)
+ส่วนข้อมูล Bolt บางส่วนเป็นการอนุมาน (inference) จากเกณฑ์ spec ที่เปิดเผย เนื่องจาก Bolt ไม่เปิดเผย
+model list ของไทยต่อสาธารณะ · ตัวเลขค่าคอมมิชชันและอัตราค่าโดยสารอาจเปลี่ยนแปลงตามนโยบายบริษัทและช่วงโปรโมชัน
+· ควรตรวจสอบกับแต่ละแพลตฟอร์มโดยตรงก่อนตัดสินใจ
+</div>
+
+<h3>แหล่งอ้างอิง</h3>
+<ul class="src">
+  <li>Grab Thailand — grabdriverth.com (model list, การคำนวณค่าคอมมิชชัน, การันตีเฉลี่ยต่อรอบ)</li>
+  <li>one2car.com — "รถรุ่นไหนขับ Grab ได้บ้าง" (อัปเดต ก.พ. 2568)</li>
+  <li>Bolt Thailand — bolt.eu/th-th/support/articles/4406008580882 (ข้อกำหนดยานพาหนะในไทย)</li>
+  <li>Bolt driver guide — bolt.eu/en-th/driver/guide/categories</li>
+  <li>amarintv.com — "Bolt เริ่มหักค่าคอมคนขับ 15% (12 มิ.ย. 2566)"</li>
+  <li>prachachat.net / today.line.me — เปรียบเทียบรายได้คนขับแอปเรียกรถ</li>
+  <li>marketingoops.com — กลยุทธ์ Pricing ของ Bolt (คอม 10–15%, ค่าโดยสารถูกกว่า 20%)</li>
+</ul>
+
+<!--EV_SECTION-->
+<div class="footer-sig">
+เอกสารนี้จัดทำเพื่อการวิเคราะห์เปรียบเทียบเชิงข้อมูล · ข้อมูล ณ กันยายน 2568<br>
+Grab &amp; Bolt Ride-Hailing Vehicle Category &amp; Driver Payout Comparative Analysis
+</div>
+
+</body>
+</html>

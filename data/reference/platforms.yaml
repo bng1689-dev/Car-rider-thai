@@ -1,0 +1,21 @@
+# L0 REFERENCE — แพลตฟอร์มเรียกรถ
+# ชั้นนี้เปลี่ยนน้อยที่สุด เป็น "นิยามของโลก" ที่ชั้นอื่นอ้างอิง
+# ทุกรายการต้องมี source_url + as_of (บังคับโดย evbuild validate)
+
+- id: grab
+  name: Grab
+  name_th: แกร็บ
+  commission_pct: 25
+  # Bolt ไม่เปิดเผย model list ของไทย · Grab เปิด → ต่างกันที่ระดับแพลตฟอร์ม
+  # ไม่ใช่ที่ระดับรถแต่ละคัน (ระบบเดิมเขียน "i" ซ้ำ 117 ครั้งเพื่อบอกเรื่องนี้)
+  publishes_model_list: true
+  source_url: https://grabdriverth.com/
+  as_of: "2025-09-15"
+
+- id: bolt
+  name: Bolt
+  name_th: โบลท์
+  commission_pct: 15
+  publishes_model_list: false
+  source_url: https://bolt.eu/th-th/support/
+  as_of: "2025-09-15"

@@ -1,0 +1,194 @@
+# L0 REFERENCE — หมวดบริการ + เกณฑ์เชิงเครื่อง
+#
+# `criteria` ต้องเป็นเกณฑ์ที่ "เครื่องอ่านแล้วตัดสินได้" ไม่ใช่คำอธิบายให้คนอ่าน
+# evbuild/rules.py ประเมิน criteria นี้โดยตรง — กฎที่เคยเขียนเป็นร้อยแก้วใน README
+# ย้ายมาอยู่ที่นี่ทั้งหมด ไม่มีกฎซ่อนอยู่ในโค้ด
+#
+# derive.on_pass / on_fail — บอกว่าผลการประเมิน criteria ให้ข้อสรุปได้แค่ไหน
+#   on_pass: eligible   ผ่านเกณฑ์ = ผ่านจริง (หมวดที่ไม่ต้องขึ้นทะเบียนเพิ่ม)
+#   on_pass: none       ผ่านเกณฑ์ยังไม่พอ ต้องมี official list ยืนยัน
+#   on_fail: ineligible ตกเกณฑ์ = ไม่ผ่านแน่นอน
+#
+# coverage_status — "ความครบถ้วนของการสำรวจ" ใช้ตีความกรณีไม่มีข้อมูล
+#   surveyed      สำรวจครบแล้ว · ไม่มีข้อกล่าวอ้าง = ไม่ผ่าน
+#   partial       สำรวจบางส่วน · ไม่มีข้อกล่าวอ้าง = ยังไม่รู้ (ขึ้น "?" รายคัน)
+#   not_surveyed  ยังไม่ได้สำรวจ · รายงานที่ระดับหมวด ไม่สาดเครื่องหมาย "?" ลงทุกคัน
+#
+# หมายเหตุเรื่องอายุรถ: Grab/Bolt กำหนดอายุรถ ≤9 ปี แต่ "อายุ" เป็นคุณสมบัติของ
+# รถคันจริง ไม่ใช่ของรุ่น ชุดข้อมูลนี้เก็บระดับรุ่น จึงไม่นำมาเป็น criteria
+# (ดู applies_to: vehicle_instance)
+
+# ─────────────────────────────── GRAB ───────────────────────────────
+
+- id: grab.car
+  platform: grab
+  legacy_key: gcar
+  label: GrabCar
+  label_th: แกร็บคาร์
+  order: 1
+  has_official_list: true
+  coverage_status: surveyed
+  # หมวดพื้นฐาน — ผ่านเกณฑ์เครื่องแล้วผ่านเลย ไม่ต้องขึ้นทะเบียนรุ่นเพิ่ม
+  # กฎข้อนี้ข้อเดียวแทนคอลัมน์ gcar ที่เคยกรอกมือ 117 ช่อง
+  derive: { on_pass: eligible, on_fail: ineligible }
+  criteria:
+    doors_in: [4, 5]
+    seats_min: 4
+    body_type_exclude: [pickup]
+  age_max_years: 9          # applies_to: vehicle_instance — ไม่ใช้ใน rules engine
+  source_url: https://grabdriverth.com/
+  as_of: "2025-09-15"
+
+- id: grab.premium
+  platform: grab
+  legacy_key: gprem
+  label: Grab Premium
+  label_th: แกร็บพรีเมียม
+  order: 2
+  has_official_list: true
+  coverage_status: surveyed
+  # ผ่านเกณฑ์เครื่องไม่พอ — Grab คัดรุ่นเข้า list เอง
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    doors_in: [4, 5]
+    seats_min: 4
+    body_type_exclude: [pickup]
+  source_url: https://grabdriverth.com/
+  as_of: "2025-09-15"
+
+- id: grab.suv
+  platform: grab
+  legacy_key: gsuv
+  label: Grab SUV
+  label_th: แกร็บเอสยูวี
+  order: 3
+  has_official_list: true
+  # partial — ข้อมูลเดิมมีทั้ง "ยืนยัน" (15) และ "รอตรวจสอบ" (37) ปนกัน
+  # แปลว่าการสำรวจยังไม่จบ · รถตัวถัง SUV/MPV ที่ไม่มีข้อกล่าวอ้าง = ยังไม่รู้
+  # เปลี่ยนเป็น surveyed ได้ถ้าต้องการให้ผลลัพธ์เหมือนระบบเดิมเป๊ะ (ดู docs)
+  coverage_status: partial
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    body_type_in: [suv, mpv]
+    body_type_exclude: [pickup]
+  source_url: https://grabdriverth.com/
+  as_of: "2025-09-15"
+
+- id: grab.van
+  platform: grab
+  legacy_key: gvan
+  label: GrabVan
+  label_th: แกร็บแวน
+  order: 4
+  has_official_list: true
+  # ข้อมูลเดิมเป็น "-" ทั้ง 117 แถว ทั้งที่มี MPV 7 ที่นั่งอยู่หลายรุ่น
+  # → ไม่ใช่ "ไม่ผ่าน" แต่คือ "ยังไม่ได้สำรวจ" · รายงานที่ระดับหมวด
+  coverage_status: not_surveyed
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    seats_min: 7
+    body_type_exclude: [pickup]
+  source_url: https://grabdriverth.com/
+  as_of: "2025-09-15"
+
+- id: grab.exec
+  platform: grab
+  legacy_key: gexec
+  label: Grab Exec
+  label_th: แกร็บเอ็กเซ็ก
+  order: 5
+  has_official_list: true
+  coverage_status: surveyed
+  # ชั้นย่อยของ Exec — เดิมถูกเก็บเป็นข้อความอิสระในฟิลด์ note
+  # ("Grab Exec Lite" / "Grab Exec M") จึงกรองและจัดกลุ่มไม่ได้
+  tiers: [lite, m]
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    doors_in: [4, 5]
+    seats_min: 4
+    body_type_exclude: [pickup]
+  source_url: https://grabdriverth.com/
+  as_of: "2025-09-15"
+
+# ─────────────────────────────── BOLT ───────────────────────────────
+# has_official_list: false ทุกหมวด — Bolt ไม่เปิดเผย model list ของไทย
+# ข้อเท็จจริงนี้ประกาศที่นี่ครั้งเดียว แทนการเขียน "i" ซ้ำ 117 ครั้งในข้อมูลดิบ
+
+- id: bolt.basic
+  platform: bolt
+  legacy_key: bbasic
+  label: Bolt Basic
+  label_th: โบลท์เบสิก
+  order: 1
+  has_official_list: false
+  coverage_status: surveyed
+  derive: { on_pass: eligible, on_fail: ineligible }
+  criteria:
+    doors_in: [4, 5]
+    seats_min: 4
+    body_type_exclude: [pickup]
+  age_max_years: 9
+  source_url: https://bolt.eu/th-th/support/
+  as_of: "2025-09-15"
+
+- id: bolt.comfort
+  platform: bolt
+  legacy_key: bcomf
+  label: Bolt Comfort
+  label_th: โบลท์คอมฟอร์ต
+  order: 2
+  has_official_list: false
+  coverage_status: surveyed
+  # list จริงมีอยู่ แต่เห็นได้เฉพาะในแอปตอนเพิ่มรถ → ต้องพึ่งการอนุมานรายคัน
+  # (เกณฑ์ขนาด/ระดับรถที่ผู้จัดทำใช้ ไม่เป็นกฎเดียวที่เขียนเป็น criteria ได้)
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    body_type_exclude: [pickup]
+  source_url: https://bolt.eu/th-th/support/
+  as_of: "2025-09-15"
+
+- id: bolt.xl
+  platform: bolt
+  legacy_key: bxl
+  label: Bolt XL
+  label_th: โบลท์เอ็กซ์แอล
+  order: 3
+  has_official_list: false
+  coverage_status: surveyed
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    body_type_exclude: [pickup]
+  source_url: https://bolt.eu/th-th/support/
+  as_of: "2025-09-15"
+
+- id: bolt.premium
+  platform: bolt
+  legacy_key: bprem
+  label: Bolt Premium
+  label_th: โบลท์พรีเมียม
+  order: 4
+  has_official_list: false
+  coverage_status: not_surveyed
+  derive: { on_pass: none, on_fail: ineligible }
+  criteria:
+    body_type_exclude: [pickup]
+  source_url: https://bolt.eu/th-th/support/
+  as_of: "2025-09-15"
+
+- id: bolt.green
+  platform: bolt
+  legacy_key: bgreen
+  label: Bolt Green
+  label_th: โบลท์กรีน
+  order: 5
+  has_official_list: false
+  coverage_status: surveyed
+  # หมวดรถไฟฟ้าโดยเฉพาะ — ตัดสินจาก powertrain ได้ 100%
+  derive: { on_pass: eligible, on_fail: ineligible }
+  criteria:
+    powertrain_in: [bev]
+    doors_in: [4, 5]
+    seats_min: 4
+    body_type_exclude: [pickup]
+  source_url: https://bolt.eu/th-th/support/
+  as_of: "2025-09-15"
