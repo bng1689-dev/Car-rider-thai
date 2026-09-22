@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ค้นหารุ่นรถ EV → หมวดขับ Grab & Bolt</title>
+<style>
+:root{
+  --bg:#08090d; --surface:#0f1117; --surface2:#141620; --border:#1e2130;
+  --text:#e0e0e0; --dim:#8a8fa8; --cyan:#00e5ff; --orange:#ff9100;
+  --green:#00e676; --gold:#ffd740; --red:#ff5252; --grab:#00b14f; --bolt:#34d186;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Sarabun','Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;max-width:100%;}
+.wrap{max-width:1300px;margin:0 auto;padding:20px 14px;}
+h1{font-size:1.4rem;color:var(--cyan);font-weight:700;margin-bottom:2px;}
+.sub{color:var(--dim);font-size:.82rem;margin-bottom:16px;}
+
+.searchbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:8px 0 12px;}
+.searchbox{position:relative;}
+#search{width:100%;padding:14px 44px 14px 44px;font-size:1.05rem;background:var(--surface);
+  border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;outline:none;transition:.2s;}
+#search:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.12);}
+.searchbox .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.2rem;color:var(--dim);}
+#clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--dim);font-size:1.3rem;cursor:pointer;display:none;}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.chip{padding:5px 12px;border:1px solid var(--border);border-radius:18px;background:var(--surface);
+  color:var(--dim);cursor:pointer;font-size:.78rem;transition:.2s;white-space:nowrap;}
+.chip:hover,.chip.on{border-color:var(--cyan);color:var(--cyan);background:#0a1520;}
+.chip.st-sale.on{border-color:var(--green);color:var(--green);background:#08160d;}
+.chip.st-2026.on{border-color:var(--gold);color:var(--gold);background:#161200;}
+.chip.st-2027.on{border-color:var(--orange);color:var(--orange);background:#1a1000;}
+
+.count{color:var(--dim);font-size:.8rem;margin:12px 0 8px;}
+.count b{color:var(--cyan);}
+
+/* result cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;transition:.15s;}
+.card:hover{border-color:var(--cyan);}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+.card .brand{color:var(--orange);font-weight:700;font-size:.78rem;}
+.card .model{color:var(--text);font-weight:700;font-size:1.05rem;line-height:1.2;margin:1px 0 3px;}
+.card .meta{color:var(--dim);font-size:.74rem;}
+.status{font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:700;white-space:nowrap;}
+.status.sale{background:#08160d;color:var(--green);}
+.status.s2026{background:#161200;color:var(--gold);}
+.status.s2027{background:#1a1000;color:var(--orange);}
+
+.apps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.app{border-radius:8px;padding:8px;}
+.app.grab{background:#04140a;border:1px solid #0a3d1e;}
+.app.bolt{background:#051810;border:1px solid #0a3320;}
+.app .app-t{font-size:.72rem;font-weight:700;margin-bottom:5px;letter-spacing:.5px;}
+.app.grab .app-t{color:var(--grab);}
+.app.bolt .app-t{color:var(--bolt);}
+.cat{display:flex;flex-wrap:wrap;gap:3px;}
+.pill{font-size:.68rem;padding:2px 7px;border-radius:5px;font-weight:600;}
+.pill.y{background:#0a3d1e;color:#4ade80;}
+.pill.i{background:#332600;color:var(--gold);}
+.pill.p{background:#3d1414;color:#ff8a8a;}
+.pill.none{color:#444;font-size:.7rem;padding:2px 0;}
+.note{margin-top:8px;font-size:.72rem;color:var(--gold);background:#161200;padding:5px 8px;border-radius:6px;}
+.note.warn{color:#ff8a8a;background:#1a0808;}
+
+.empty{text-align:center;padding:40px;color:var(--dim);}
+.legend{display:flex;flex-wrap:wrap;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:.76rem;}
+.legend span{display:flex;align-items:center;gap:5px;}
+.dot{width:9px;height:9px;border-radius:2px;}
+.dot.y{background:#4ade80;}.dot.i{background:var(--gold);}.dot.p{background:#ff8a8a;}
+
+.foot{margin-top:24px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.74rem;color:var(--dim);}
+.foot b{color:var(--cyan);}
+@media(max-width:600px){.wrap{padding:12px 8px;}.cards{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔋 ค้นหารุ่นรถ EV → สมัครขับหมวดไหน</h1>
+<p class="sub">พิมพ์ยี่ห้อหรือรุ่น เช่น "seal", "tesla", "atto" แล้วดูว่าสมัครหมวดไหนได้ทั้ง Grab & Bolt · ครอบคลุม BEV ไทย 2024–2027</p>
+
+<div class="legend">
+  <span><span class="dot y"></span> ยืนยัน (Grab list)</span>
+  <span><span class="dot i"></span> Bolt inference (จาก spec)</span>
+  <span><span class="dot p"></span> รอตรวจสอบ (รุ่นใหม่ยังไม่อยู่ใน Grab list)</span>
+</div>
+
+<div class="searchbar">
+  <div class="searchbox">
+    <span class="ico">🔍</span>
+    <input id="search" placeholder="พิมพ์ยี่ห้อ / รุ่น เช่น BYD, Seal, Tesla, Atto 3..." autocomplete="off">
+    <button id="clear">✕</button>
+  </div>
+  <div class="filters" id="brandFilters"></div>
+  <div class="filters" style="margin-top:6px">
+    <span class="chip st-sale" data-st="sale">ขายแล้ว 24–25</span>
+    <span class="chip st-2026" data-st="2026">เปิดตัว 2026</span>
+    <span class="chip st-2027" data-st="2027">คาด 2027</span>
+  </div>
+</div>
+
+<div class="count" id="count"></div>
+<div class="cards" id="results"></div>
+
+<div class="foot">
+<b>หมายเหตุ:</b> ทุก BEV 4 ประตู ≥4 ที่นั่ง อายุ ≤9 ปี → ผ่าน GrabCar/Lady + Bolt Basic/Green อัตโนมัติ ·
+<b>Grab Premium/SUV</b> ยืนยันเฉพาะรุ่นใน grabdriverth.com — รุ่นใหม่ที่ยังไม่อยู่ใน list = "รอตรวจสอบ" ·
+<b>Bolt</b> ทุกช่องเป็น inference จาก spec เพราะไม่เปิดเผย model list ของไทย ·
+<b>Comfort list</b> ของ Bolt มีจริงแต่เห็นได้เฉพาะในแอปตอนเพิ่มรถ · ข้อมูล ก.ย. 2568
+</div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/;
+const grabCats=[["gcar","Car"],["gprem","Premium"],["gsuv","SUV"],["gvan","Van"],["gexec","Exec"]];
+const boltCats=[["bbasic","Basic"],["bcomf","Comfort"],["bxl","XL"],["bprem","Premium"],["bgreen","Green"]];
+const stName={sale:["ขายแล้ว","sale"],"2026":["เปิดตัว 2026","s2026"],"2027":["คาด 2027","s2027"]};
+
+let q="", brandF="", stF="";
+
+// build brand filter chips
+const brands=[...new Set(DATA.map(e=>e.brand))].sort();
+const bf=document.getElementById('brandFilters');
+const allChip=document.createElement('span');allChip.className='chip on';allChip.textContent='ทั้งหมด';allChip.dataset.brand='';
+bf.appendChild(allChip);
+brands.forEach(b=>{const c=document.createElement('span');c.className='chip';c.textContent=b;c.dataset.brand=b;bf.appendChild(c);});
+
+bf.addEventListener('click',e=>{if(!e.target.dataset.hasOwnProperty('brand'))return;
+  brandF=e.target.dataset.brand;
+  bf.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.brand===brandF));
+  render();});
+
+document.querySelectorAll('.chip[data-st]').forEach(c=>c.addEventListener('click',()=>{
+  const s=c.dataset.st; stF = stF===s ? "" : s;
+  document.querySelectorAll('.chip[data-st]').forEach(x=>x.classList.toggle('on',x.dataset.st===stF));
+  render();}));
+
+const si=document.getElementById('search'), cl=document.getElementById('clear');
+si.addEventListener('input',()=>{q=si.value.trim().toLowerCase();cl.style.display=q?'block':'none';render();});
+cl.addEventListener('click',()=>{si.value="";q="";cl.style.display='none';render();si.focus();});
+
+function pills(e,cats){
+  return cats.map(([k,label])=>{
+    const v=e[k];
+    if(v==='-')return '';
+    const cls=v==='y'?'y':v==='i'?'i':'p';
+    return `<span class="pill ${cls}">${label}</span>`;
+  }).filter(x=>x).join('') || '<span class="pill none">—</span>';
+}
+
+function render(){
+  let rows=DATA.filter(e=>{
+    if(brandF && e.brand!==brandF)return false;
+    if(stF && e.status!==stF)return false;
+    if(q){const s=(e.brand+' '+e.model).toLowerCase();if(!s.includes(q))return false;}
+    return true;
+  });
+  document.getElementById('count').innerHTML=`พบ <b>${rows.length}</b> รุ่น`;
+  const box=document.getElementById('results');
+  if(!rows.length){box.innerHTML='<div class="empty">ไม่พบรุ่นที่ค้นหา ลองพิมพ์ยี่ห้อ เช่น BYD, MG, Tesla</div>';return;}
+  box.innerHTML=rows.map(e=>{
+    const [stn,stc]=stName[e.status];
+    const isPickup=e.gcar==='-';
+    let notehtml='';
+    if(e.note){
+      const warn = e.note.includes('กระบะ')?' warn':'';
+      notehtml=`<div class="note${warn}">${e.note}</div>`;
+    }
+    if(isPickup){
+      return `<div class="card"><div class="card-head"><div>
+        <div class="brand">${e.brand}</div><div class="model">${e.model}</div>
+        <div class="meta">${e.body} · ${e.seats} ที่นั่ง</div></div>
+        <span class="status ${stc}">${stn}</span></div>
+        <div class="note warn">${e.note||'รถกระบะ — ทั้ง 2 แอปไม่รับสมัคร'}</div></div>`;
+    }
+    return `<div class="card"><div class="card-head"><div>
+      <div class="brand">${e.brand}</div><div class="model">${e.model}</div>
+      <div class="meta">${e.body} · ${e.seats} ที่นั่ง</div></div>
+      <span class="status ${stc}">${stn}</span></div>
+      <div class="apps">
+        <div class="app grab"><div class="app-t">GRAB</div><div class="cat">${pills(e,grabCats)}</div></div>
+        <div class="app bolt"><div class="app-t">BOLT ⟡</div><div class="cat">${pills(e,boltCats)}</div></div>
+      </div>${notehtml}</div>`;
+  }).join('');
+}
+render();
+</script>
+</body>
+</html>
