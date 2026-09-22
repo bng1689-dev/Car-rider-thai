@@ -177,23 +177,21 @@ def build(
         cell.font = Font(name=FONT, size=11, bold=True, color=WHITE)
         cell.fill = PatternFill("solid", fgColor=RED)
 
-    pending = [r for r in resolved if r.eligibility == "unverified"]
-    for r in pending:
+    # แถวที่มีข้อกล่าวอ้างแล้วแต่ยังไม่รู้ผล
+    for r in (row for row in resolved if row.eligibility == "unverified"):
         category = reference.category_by_id[r.category_id]
         ws3.append([category.label, category.coverage_status,
                     f"{r.brand} {r.model}", r.reason])
 
-    from ..rules import body_type_blocks_ridehailing, evaluate
-    for category in reference.categories:
-        if category.coverage_status != "not_surveyed":
-            continue
-        for vehicle in vehicles:
-            if body_type_blocks_ridehailing(vehicle, reference):
-                continue
-            if evaluate(vehicle, category).result != "pass":
-                continue
-            ws3.append([category.label, "not_surveyed", vehicle.display_name,
-                        "เข้าเกณฑ์เครื่อง แต่ทั้งหมวดยังไม่มีข้อกล่าวอ้างแม้แต่แถวเดียว"])
+    # แถวของหมวดที่ยังไม่ได้สำรวจ — ตัดรถที่มีข้อกล่าวอ้างแล้วออก
+    # (มิฉะนั้นรถคันเดียวกันจะโผล่สองครั้งด้วยเหตุผลที่ขัดกันเอง)
+    for gap in view.survey_gaps(reference, vehicles, resolved):
+        reason = ("เข้าเกณฑ์เครื่อง แต่ยังไม่มีใครตรวจหมวดนี้กับรุ่นนี้"
+                  + (f" (หมวดนี้สำรวจไปแล้ว {gap['claimed']} รุ่น)"
+                     if gap["claimed"] else ""))
+        for vehicle in gap["candidates"]:
+            ws3.append([gap["category"].label, "not_surveyed",
+                        vehicle.display_name, reason])
 
     for row in ws3.iter_rows(min_row=2):
         for cell in row:

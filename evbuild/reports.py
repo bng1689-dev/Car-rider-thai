@@ -9,8 +9,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from datetime import date
 
+from . import view
 from .model import Reference, Resolved, Vehicle
-from .rules import evaluate, body_type_blocks_ridehailing
 
 LIST_LIMIT = 12
 
@@ -25,6 +25,7 @@ def coverage(
     for row in resolved:
         by_category[row.category_id][row.eligibility] += 1
 
+    gaps = {g["category"].id: g for g in view.survey_gaps(reference, vehicles, resolved)}
     total = len(vehicles)
     for category in sorted(reference.categories, key=lambda c: (c.platform, c.order)):
         counts = by_category.get(category.id, Counter())
@@ -33,14 +34,14 @@ def coverage(
             f"\n{category.id:<16} {category.label:<16} [{category.coverage_status}]"
         )
         if category.coverage_status == "not_surveyed":
-            candidates = [
-                v for v in vehicles
-                if not body_type_blocks_ridehailing(v, reference)
-                and evaluate(v, category).result == "pass"
-            ]
-            lines.append(f"  ยังไม่ได้สำรวจ — ไม่มีข้อกล่าวอ้างแม้แต่แถวเดียวจาก {total} รุ่น")
+            gap = gaps[category.id]
+            candidates = gap["candidates"]
+            # ถ้อยคำมาจากข้อมูลจริง ไม่ใช่จากธง coverage_status
+            lines.append("  " + view.survey_gap_summary(gap))
+            for r in gap["pending"][:LIST_LIMIT]:
+                lines.append(f"     • {r.brand} {r.model} — มีข้อกล่าวอ้างแล้ว (รอตรวจสอบ)")
             if candidates:
-                lines.append(f"  มีรถเข้าเกณฑ์เครื่องรอตรวจ {len(candidates)} รุ่น:")
+                lines.append(f"  ยังไม่แตะเลย {len(candidates)} รุ่น:")
                 for v in candidates[:LIST_LIMIT]:
                     lines.append(f"     - {v.display_name} ({v.seats} ที่นั่ง)")
                 if len(candidates) > LIST_LIMIT:

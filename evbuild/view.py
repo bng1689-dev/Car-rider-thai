@@ -150,3 +150,57 @@ def not_surveyed_categories(reference: Reference) -> list[dict[str, str]]:
         for c in reference.categories
         if c.coverage_status == "not_surveyed"
     ]
+
+
+def survey_gaps(
+    reference: Reference, vehicles: list[Vehicle], resolved: list[Resolved]
+) -> list[dict[str, Any]]:
+    """งานค้างของหมวดที่ประกาศ not_surveyed — คำนวณจากข้อมูลจริง ไม่ใช่จากธง
+
+    สำคัญ: coverage_status เป็น "คำประกาศ" ส่วนจำนวนข้อกล่าวอ้างเป็น "ข้อเท็จจริง"
+    ทั้งสองอย่างอาจไม่ตรงกัน (เช่น bolt.premium ประกาศว่ายังไม่ได้สำรวจ
+    แต่มีข้อกล่าวอ้างอยู่ 1 แถวจากข้อมูลเดิม) รายงานต้องยึดข้อเท็จจริง
+    มิฉะนั้นจะบอกว่า "ไม่มีข้อกล่าวอ้างแม้แต่แถวเดียว" ทั้งที่มี และรถคันเดียวกัน
+    จะโผล่ทั้งในรายการ "รอตรวจสอบ" และในรายการ "หมวดที่ยังไม่มีข้อกล่าวอ้าง"
+
+    ตัวเรนเดอร์ทุกตัวและรายงานทุกชนิดใช้ตัวนี้ร่วมกัน จึงนับไม่ตรงกันไม่ได้
+    """
+    from .rules import body_type_blocks_ridehailing, evaluate
+
+    gaps: list[dict[str, Any]] = []
+    for category in sorted(reference.categories, key=lambda c: (c.platform, c.order)):
+        if category.coverage_status != "not_surveyed":
+            continue
+
+        # รถที่มีข้อสรุปแล้ว ไม่ว่าจะผ่าน ไม่ผ่าน หรือรอตรวจสอบ ไม่ใช่ "งานที่ยังไม่แตะ"
+        covered = {
+            r.vehicle_id for r in resolved
+            if r.category_id == category.id and r.basis is not None
+            and r.basis != "rule_derived"
+        }
+        pending = [r for r in resolved
+                   if r.category_id == category.id and r.eligibility == "unverified"]
+        candidates = [
+            v for v in vehicles
+            if v.vehicle_id not in covered
+            and not body_type_blocks_ridehailing(v, reference)
+            and evaluate(v, category).result == "pass"
+        ]
+        gaps.append({
+            "category": category,
+            "claimed": len(covered),
+            "pending": pending,
+            "candidates": candidates,
+        })
+    return gaps
+
+
+def survey_gap_summary(gap: dict[str, Any]) -> str:
+    """ประโยคเดียวที่บรรยายช่องว่างของหมวดหนึ่ง ให้ทุก output ใช้ถ้อยคำเดียวกัน"""
+    category = gap["category"]
+    if gap["claimed"]:
+        head = (f"สำรวจแล้วบางส่วน {gap['claimed']} รุ่น "
+                f"(ประกาศไว้เป็น not_surveyed — ควรแก้เป็น partial)")
+    else:
+        head = "ยังไม่มีข้อกล่าวอ้างแม้แต่แถวเดียว"
+    return f"{category.label} — {head} · เหลือรถเข้าเกณฑ์รอตรวจ {len(gap['candidates'])} รุ่น"

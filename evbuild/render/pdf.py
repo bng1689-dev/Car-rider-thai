@@ -13,7 +13,6 @@ from pathlib import Path
 
 from .. import view
 from ..model import Reference, Resolved, Vehicle
-from ..rules import body_type_blocks_ridehailing, evaluate
 from . import OUTPUTS, TEMPLATES, fill_template, html_escape
 
 STYLE = """<style>
@@ -84,20 +83,12 @@ def _provenance_section(
                  f'<td class="n">{100 * unverified / total:.1f}%</td></tr>')
 
     stale_count = sum(1 for r in resolved if r.is_stale)
-    not_surveyed = ""
-    for category in reference.categories:
-        if category.coverage_status != "not_surveyed":
-            continue
-        candidates = [
-            v for v in vehicles
-            if not body_type_blocks_ridehailing(v, reference)
-            and evaluate(v, category).result == "pass"
-        ]
-        not_surveyed += (
-            f"<li><strong>{html_escape(category.label)}</strong> — "
-            f"ยังไม่มีข้อกล่าวอ้างแม้แต่แถวเดียว "
-            f"แต่มีรถเข้าเกณฑ์รอตรวจ {len(candidates)} รุ่น</li>"
-        )
+    # ถ้อยคำมาจากข้อมูลจริง ไม่ใช่จากธง coverage_status — ตัวช่วยเดียวกับที่
+    # รายงาน coverage และชีต "งานค้าง" ใช้ จึงนับไม่ตรงกันไม่ได้
+    not_surveyed = "".join(
+        f"<li>{html_escape(view.survey_gap_summary(gap))}</li>"
+        for gap in view.survey_gaps(reference, vehicles, resolved)
+    )
 
     conflicts = [r for r in resolved if r.rule_conflict]
     conflict_html = ""
@@ -122,7 +113,7 @@ def _provenance_section(
 <table class="data prov"><thead><tr>
 <th style="width:52%">ที่มาของข้อสรุป</th><th class="c" style="width:24%">จำนวนแถว</th>
 <th class="c" style="width:24%">สัดส่วน</th></tr></thead><tbody>{rows}</tbody></table>
-{f'<p><strong>หมวดที่ยังไม่ได้สำรวจ</strong></p><ul>{not_surveyed}</ul>' if not_surveyed else ''}
+{f'<p><strong>หมวดที่ประกาศว่ายังไม่ได้สำรวจ</strong></p><ul>{not_surveyed}</ul>' if not_surveyed else ''}
 {conflict_html}
 <div class="note-box"><strong>วิธีอ่าน:</strong> ข้อสรุปที่มาจาก "คำนวณจากกฎ"
 ไม่ได้อ่อนกว่าข้อสรุปที่มาจากรายการทางการ — เป็นคนละชนิดของหลักฐาน

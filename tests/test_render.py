@@ -109,7 +109,8 @@ class TestCsvExport(unittest.TestCase):
                                as_of=date(2025, 9, 15), stale_days=90,
                                out_dir=Path(tmp))
             i2_path = next(p for p in paths if p.name == "i2-links.csv")
-            rows = list(csv.DictReader(i2_path.open(encoding="utf-8-sig")))
+            with i2_path.open(encoding="utf-8-sig") as fh:
+                rows = list(csv.DictReader(fh))
 
         self.assertTrue(rows)
         self.assertTrue(all(r["Link_Type"] == "Eligibility" for r in rows))

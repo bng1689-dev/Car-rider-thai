@@ -212,6 +212,19 @@ def validate_claims(
             v.warn(where, f"eligibility=unverified คู่กับ basis={c.basis!r} "
                           "— ปกติควรเป็น manual (คนบันทึกว่ายังไม่ได้ตรวจ)")
 
+    # หมวดที่ประกาศว่า "ยังไม่ได้สำรวจ" แต่มีข้อกล่าวอ้างแล้ว = ประกาศไม่ตรงข้อมูล
+    # รายงานจะยังนับข้อกล่าวอ้างเหล่านี้ถูกต้อง แต่ coverage_status ควรถูกแก้
+    # เป็น partial เพื่อให้รถที่เหลือขึ้นเป็น "รอตรวจสอบ" รายคัน
+    claimed_categories = {c.category_id for c in claims}
+    for category in ref.categories:
+        if category.coverage_status == "not_surveyed" and category.id in claimed_categories:
+            count = sum(1 for c in claims if c.category_id == category.id)
+            v.warn(
+                f"categories.yaml[{category.id}]",
+                f"ประกาศ not_surveyed แต่มีข้อกล่าวอ้างแล้ว {count} แถว "
+                "— พิจารณาเปลี่ยนเป็น partial",
+            )
+
 
 # ── ตรรกะข้ามชั้น ────────────────────────────────────────────────────────
 
@@ -251,11 +264,23 @@ def validate_logic(ref: Reference, vehicles: list[Vehicle], resolved, v: Validat
             )
 
 
-def validate_all(ref, vehicles, claims, resolved=None) -> Validator:
-    v = Validator()
+def validate_structure(ref, vehicles, claims, v: Validator | None = None) -> Validator:
+    """ตรวจรูปร่างของข้อมูลล้วน ๆ — ไม่ต้องผ่าน resolve ก่อน
+
+    ต้องเรียกตัวนี้ให้จบและไม่มี error ก่อน resolve เสมอ เพราะ rules engine
+    สมมติว่าชนิดข้อมูลถูกต้องแล้ว (เช่น seats เป็นจำนวนเต็ม) — ถ้าปล่อยให้
+    resolve ทำงานก่อน ข้อมูลผิดชนิดจะทำให้พังด้วย traceback แทนที่จะได้
+    ข้อความบอกจุดที่ผิด ซึ่งขัดกับสัญญาของคำสั่ง validate เอง
+    """
+    v = v or Validator()
     validate_reference(ref, v)
     validate_vehicles(ref, vehicles, v)
     validate_claims(ref, vehicles, claims, v)
+    return v
+
+
+def validate_all(ref, vehicles, claims, resolved=None) -> Validator:
+    v = validate_structure(ref, vehicles, claims)
     if resolved is not None:
         validate_logic(ref, vehicles, resolved, v)
     return v

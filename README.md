@@ -33,12 +33,13 @@ python -m evbuild build xlsx html          # เลือกเฉพาะบ�
 python -m evbuild report coverage          # หมวด/รุ่นไหนยังไม่ได้ตรวจ
 python -m evbuild report stale --days 90   # ข้อมูลเก่าเกินกำหนด
 python -m evbuild report qa                # จุดที่ต้องให้คนตัดสิน
-python -m unittest discover -s tests -t .  # เทสต์ทั้งหมด (59 ข้อ)
+python -m unittest discover -s tests -t .  # เทสต์ทั้งหมด (76 ข้อ)
 python tools/diff_legacy.py                # เทียบผลลัพธ์กับระบบเดิม 1,170 ช่อง
 ```
 
 ตัวเลือกร่วม — `--as-of YYYY-MM-DD` (ประเมินความสดของข้อมูล ณ วันไหน) ·
 `--days N` (เพดานอายุข้อมูล) · `--strict` (ถือว่าคำเตือนเป็นข้อผิดพลาด)
+ใส่ได้ทั้งก่อนและหลังคำสั่งย่อย
 
 ---
 
@@ -52,7 +53,7 @@ data/
 
 evbuild/                L3  กฎ + การตัดสิน   L4  ผลสุดท้าย + ตัวเรนเดอร์
 tools/                  แปลงข้อมูลเดิม · เทียบผลลัพธ์กับระบบเดิม
-tests/                  59 เทสต์ (unittest ของ stdlib ไม่ต้องลงอะไรเพิ่ม)
+tests/                  76 เทสต์ (unittest ของ stdlib ไม่ต้องลงอะไรเพิ่ม)
 templates/              หน้าค้นหา · เอกสารวิเคราะห์
 ev-project/             ระบบเดิม เก็บไว้เป็นตัวเทียบผลการทดสอบ
 docs/                   เอกสารสถาปัตยกรรม

@@ -22,7 +22,7 @@ from . import reports
 from .loader import DataError, load_all
 from .render import OUTPUTS
 from .resolve import DEFAULT_STALE_DAYS, resolve_all
-from .validate import validate_all
+from .validate import validate_logic, validate_structure
 
 RENDERERS = ("xlsx", "html", "pdf", "csv")
 
@@ -48,21 +48,42 @@ def _print_issues(validator, strict: bool) -> None:
               file=sys.stderr)
 
 
+def _fail(validator, args, stage: str):
+    print(f"ตรวจ  ผิดพลาด {len(validator.errors)} · คำเตือน {len(validator.warnings)}")
+    _print_issues(validator, args.strict)
+    print(f"\nหยุดที่ขั้น{stage} — แก้ข้อมูลให้ถูกต้องก่อน", file=sys.stderr)
+    raise SystemExit(1)
+
+
 def _pipeline(args):
-    """load → validate → resolve · คืน (reference, vehicles, claims, resolved)"""
+    """load → ตรวจโครงสร้าง → resolve → ตรวจตรรกะ
+
+    ลำดับนี้สำคัญ: rules engine สมมติว่าชนิดข้อมูลถูกต้องแล้ว การ resolve
+    ก่อนตรวจจะทำให้ข้อมูลผิดชนิด (เช่น seats เป็นสตริง) พังด้วย traceback
+    แทนที่จะได้ข้อความบอกจุดที่ผิด
+
+    คืน (reference, vehicles, claims, resolved, as_of)
+    """
     reference, vehicles, claims = load_all()
     as_of = _parse_as_of(args.as_of)
-    resolved = resolve_all(reference, vehicles, claims,
-                           as_of=as_of, stale_days=args.days)
-    validator = validate_all(reference, vehicles, claims, resolved)
 
     print(f"โหลด  รถ {len(vehicles)} รุ่น · ข้อกล่าวอ้าง {len(claims)} แถว · "
           f"หมวด {len(reference.categories)} หมวด")
+
+    # ขั้นที่ 1 — โครงสร้าง · ต้องผ่านก่อนถึงจะแตะ rules engine ได้
+    validator = validate_structure(reference, vehicles, claims)
+    if not validator.ok(strict=args.strict):
+        _fail(validator, args, "ตรวจโครงสร้าง")
+
+    resolved = resolve_all(reference, vehicles, claims,
+                           as_of=as_of, stale_days=args.days)
+
+    # ขั้นที่ 2 — ตรรกะข้ามชั้น · ต้องใช้ผลลัพธ์ที่ resolve แล้ว
+    validate_logic(reference, vehicles, resolved, validator)
     print(f"ตรวจ  ผิดพลาด {len(validator.errors)} · "
           f"คำเตือน {len(validator.warnings)}")
     if validator.issues:
         _print_issues(validator, args.strict)
-
     if not validator.ok(strict=args.strict):
         print("\nหยุดก่อนสร้าง output — แก้ข้อมูลให้ถูกต้องก่อน", file=sys.stderr)
         raise SystemExit(1)
@@ -124,32 +145,55 @@ def cmd_report(args) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="evbuild", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--as-of", help="ประเมินความสดของข้อมูล ณ วันนี้ (YYYY-MM-DD)")
-    parser.add_argument("--days", type=int, default=DEFAULT_STALE_DAYS,
+# ตัวเลือกร่วม — ใส่ได้ทั้งก่อนและหลังคำสั่งย่อย
+#
+# argparse รับตัวเลือกของ parser หลักเฉพาะ "ก่อน" คำสั่งย่อยเท่านั้น
+# วิธีแก้คือใส่ตัวเลือกชุดเดียวกันทั้งสองระดับผ่าน parents=[...]
+# และตั้ง default=SUPPRESS เพื่อไม่ให้ระดับล่างเขียนทับค่าที่ระดับบนตั้งไว้
+# (ถ้าใช้ค่า default ปกติ `--days 30 report stale` จะถูกรีเซ็ตกลับเป็น 90)
+SHARED_DEFAULTS = {"as_of": None, "days": DEFAULT_STALE_DAYS, "strict": False, "out": None}
+
+
+def _shared_options() -> argparse.ArgumentParser:
+    shared = argparse.ArgumentParser(add_help=False)
+    shared.add_argument("--as-of", default=argparse.SUPPRESS,
+                        help="ประเมินความสดของข้อมูล ณ วันนี้ (YYYY-MM-DD)")
+    shared.add_argument("--days", type=int, default=argparse.SUPPRESS,
                         help=f"เพดานอายุข้อมูล (ค่าเริ่มต้น {DEFAULT_STALE_DAYS} วัน)")
-    parser.add_argument("--strict", action="store_true",
+    shared.add_argument("--strict", action="store_true", default=argparse.SUPPRESS,
                         help="ถือว่าคำเตือนเป็นข้อผิดพลาดด้วย")
+    return shared
+
+
+def main(argv: list[str] | None = None) -> int:
+    shared = _shared_options()
+    parser = argparse.ArgumentParser(prog="evbuild", description=__doc__,
+                                     parents=[shared],
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("validate", help="ตรวจข้อมูลอย่างเดียว").set_defaults(func=cmd_validate)
+    validate_parser = sub.add_parser("validate", help="ตรวจข้อมูลอย่างเดียว",
+                                     parents=[shared])
+    validate_parser.set_defaults(func=cmd_validate)
 
-    build_parser = sub.add_parser("build", help="ตรวจแล้วสร้าง output")
+    build_parser = sub.add_parser("build", help="ตรวจแล้วสร้าง output", parents=[shared])
     build_parser.add_argument("targets", nargs="*",
                               help=f"เลือกชนิด: {', '.join(RENDERERS)} (ว่าง = ทั้งหมด)")
-    build_parser.add_argument("--out", help="โฟลเดอร์ปลายทาง")
+    build_parser.add_argument("--out", default=argparse.SUPPRESS,
+                              help="โฟลเดอร์ปลายทาง")
     build_parser.set_defaults(func=cmd_build)
 
-    report_parser = sub.add_parser("report", help="รายงานความครบถ้วน/ความสด/QA")
+    report_parser = sub.add_parser("report", help="รายงานความครบถ้วน/ความสด/QA",
+                                   parents=[shared])
     report_parser.add_argument("kind", choices=("coverage", "stale", "qa", "summary"))
     report_parser.set_defaults(func=cmd_report)
 
     args = parser.parse_args(argv)
-    if not hasattr(args, "out"):
-        args.out = None
+    for name, default in SHARED_DEFAULTS.items():
+        if not hasattr(args, name):
+            setattr(args, name, default)
+
     try:
         return args.func(args)
     except DataError as exc:
