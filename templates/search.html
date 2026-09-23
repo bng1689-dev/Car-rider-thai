@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ค้นหารุ่นรถ EV → หมวดขับ Grab &amp; Bolt</title>
+<style>
+:root{
+  --bg:#08090d; --surface:#0f1117; --surface2:#141620; --border:#1e2130;
+  --text:#e0e0e0; --dim:#8a8fa8; --cyan:#00e5ff; --orange:#ff9100;
+  --green:#00e676; --gold:#ffd740; --red:#ff5252; --violet:#b388ff;
+  --grab:#00b14f; --bolt:#34d186;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Sarabun','Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;max-width:100%;}
+.wrap{max-width:1300px;margin:0 auto;padding:20px 14px;}
+h1{font-size:1.4rem;color:var(--cyan);font-weight:700;margin-bottom:2px;}
+.sub{color:var(--dim);font-size:.82rem;margin-bottom:16px;}
+
+.searchbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:8px 0 12px;}
+.searchbox{position:relative;}
+#search{width:100%;padding:14px 44px 14px 44px;font-size:1.05rem;background:var(--surface);
+  border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;outline:none;transition:.2s;}
+#search:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.12);}
+.searchbox .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.2rem;color:var(--dim);}
+#clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--dim);font-size:1.3rem;cursor:pointer;display:none;}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.chip{padding:5px 12px;border:1px solid var(--border);border-radius:18px;background:var(--surface);
+  color:var(--dim);cursor:pointer;font-size:.78rem;transition:.2s;white-space:nowrap;}
+.chip:hover,.chip.on{border-color:var(--cyan);color:var(--cyan);background:#0a1520;}
+.chip.st-on_sale.on{border-color:var(--green);color:var(--green);background:#08160d;}
+.chip.st-announced.on{border-color:var(--gold);color:var(--gold);background:#161200;}
+.chip.st-expected.on{border-color:var(--orange);color:var(--orange);background:#1a1000;}
+.chip.st-pending.on{border-color:var(--red);color:var(--red);background:#1a0808;}
+
+.count{color:var(--dim);font-size:.8rem;margin:12px 0 8px;}
+.count b{color:var(--cyan);}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;transition:.15s;}
+.card:hover{border-color:var(--cyan);}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+.card .brand{color:var(--orange);font-weight:700;font-size:.78rem;}
+.card .model{color:var(--text);font-weight:700;font-size:1.05rem;line-height:1.2;margin:1px 0 3px;}
+.card .meta{color:var(--dim);font-size:.74rem;}
+.status{font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:700;white-space:nowrap;}
+.status.sale{background:#08160d;color:var(--green);}
+.status.announced{background:#161200;color:var(--gold);}
+.status.expected{background:#1a1000;color:var(--orange);}
+
+.apps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.app{border-radius:8px;padding:8px;}
+.app.grab{background:#04140a;border:1px solid #0a3d1e;}
+.app.bolt{background:#051810;border:1px solid #0a3320;}
+.app .app-t{font-size:.72rem;font-weight:700;margin-bottom:5px;letter-spacing:.5px;}
+.app.grab .app-t{color:var(--grab);}
+.app.bolt .app-t{color:var(--bolt);}
+.cat{display:flex;flex-wrap:wrap;gap:3px;}
+.pill{font-size:.68rem;padding:2px 7px;border-radius:5px;font-weight:600;cursor:help;}
+.pill.y{background:#0a3d1e;color:#4ade80;}
+.pill.i{background:#332600;color:var(--gold);}
+.pill.r{background:#101828;color:#93a3c4;}
+.pill.m{background:#1a1230;color:var(--violet);}
+.pill.p{background:#3d1414;color:#ff8a8a;}
+.pill.stale{outline:1px dashed #ff8a8a;outline-offset:1px;}
+.pill.none{color:#444;font-size:.7rem;padding:2px 0;}
+.note{margin-top:8px;font-size:.72rem;color:var(--gold);background:#161200;padding:5px 8px;border-radius:6px;}
+.note.warn{color:#ff8a8a;background:#1a0808;}
+.note.issue{color:var(--violet);background:#140d24;}
+
+.empty{text-align:center;padding:40px;color:var(--dim);}
+.legend{display:flex;flex-wrap:wrap;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;font-size:.76rem;}
+.legend span{display:flex;align-items:center;gap:5px;}
+.dot{width:9px;height:9px;border-radius:2px;}
+.dot.y{background:#4ade80;}.dot.i{background:var(--gold);}
+.dot.r{background:#93a3c4;}.dot.m{background:var(--violet);}.dot.p{background:#ff8a8a;}
+
+.banner{padding:10px 14px;background:#140d24;border:1px solid #2a1f47;border-radius:8px;
+  margin-bottom:14px;font-size:.76rem;color:#c9b8ff;}
+.banner b{color:var(--violet);}
+.foot{margin-top:24px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:.74rem;color:var(--dim);}
+.foot b{color:var(--cyan);}
+.foot ul{margin:6px 0 0 18px;}
+@media(max-width:600px){.wrap{padding:12px 8px;}.cards{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔋 ค้นหารุ่นรถ EV → สมัครขับหมวดไหน</h1>
+<p class="sub">พิมพ์ยี่ห้อหรือรุ่น เช่น "seal", "tesla", "atto" แล้วดูว่าสมัครหมวดไหนได้ทั้ง Grab &amp; Bolt</p>
+
+<div class="legend">
+  <span><span class="dot y"></span> ยืนยันจากรายการทางการ</span>
+  <span><span class="dot i"></span> อนุมานจาก spec</span>
+  <span><span class="dot r"></span> คำนวณจากกฎ</span>
+  <span><span class="dot m"></span> บันทึกโดยผู้จัดทำ</span>
+  <span><span class="dot p"></span> ยังไม่ได้ตรวจ</span>
+</div>
+<div class="banner" id="banner"></div>
+
+<div class="searchbar">
+  <div class="searchbox">
+    <span class="ico">🔍</span>
+    <input id="search" placeholder="พิมพ์ยี่ห้อ / รุ่น เช่น BYD, Seal, Tesla, Atto 3..." autocomplete="off">
+    <button id="clear" type="button" aria-label="ล้างคำค้น">✕</button>
+  </div>
+  <div class="filters" id="brandFilters"></div>
+  <div class="filters" style="margin-top:6px">
+    <span class="chip st-on_sale" data-st="on_sale">ขายแล้ว</span>
+    <span class="chip st-announced" data-st="announced">เปิดตัว 2026</span>
+    <span class="chip st-expected" data-st="expected">คาด 2027</span>
+    <span class="chip st-pending" data-pending="1">มีหมวดรอตรวจสอบ</span>
+  </div>
+</div>
+
+<div class="count" id="count"></div>
+<div class="cards" id="results"></div>
+
+<div class="foot" id="foot"></div>
+</div>
+
+<!-- ข้อมูลอยู่ในบล็อก JSON แยก ไม่ได้ต่อสตริงเข้าไปในโค้ด JS
+     และ build ฝั่ง Python แปลง < > & เป็น \uXXXX ก่อนฝัง
+     จึงหลุดออกจากบล็อกสคริปต์ไม่ได้ แม้ข้อมูลจะมาจาก scraper ในอนาคต -->
+<script type="application/json" id="ev-data">/*__DATA__*/</script>
+<script type="application/json" id="ev-meta">/*__META__*/</script>
+<script>
+"use strict";
+const DATA = JSON.parse(document.getElementById('ev-data').textContent);
+const META = JSON.parse(document.getElementById('ev-meta').textContent);
+
+// ทุกค่าที่มาจากข้อมูลต้องผ่านตัวนี้ก่อนลง innerHTML เสมอ
+// ระบบเดิมต่อ ${e.model} และ ${e.note} เข้า innerHTML ตรง ๆ โดยไม่ escape
+function esc(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let q = "", brandF = "", stF = "", pendingOnly = false;
+
+const brands = [...new Set(DATA.map(e => e.brand))].sort();
+const bf = document.getElementById('brandFilters');
+function addChip(parent, text, dataset, on){
+  const chip = document.createElement('span');
+  chip.className = 'chip' + (on ? ' on' : '');
+  chip.textContent = text;                     // textContent — ไม่ตีความ HTML
+  Object.assign(chip.dataset, dataset);
+  parent.appendChild(chip);
+  return chip;
+}
+addChip(bf, 'ทั้งหมด', {brand: ''}, true);
+brands.forEach(b => addChip(bf, b, {brand: b}, false));
+
+bf.addEventListener('click', e => {
+  if (!('brand' in e.target.dataset)) return;
+  brandF = e.target.dataset.brand;
+  bf.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.brand === brandF));
+  render();
+});
+
+document.querySelectorAll('.chip[data-st]').forEach(c => c.addEventListener('click', () => {
+  stF = stF === c.dataset.st ? "" : c.dataset.st;
+  document.querySelectorAll('.chip[data-st]').forEach(x => x.classList.toggle('on', x.dataset.st === stF));
+  render();
+}));
+
+const pendingChip = document.querySelector('.chip[data-pending]');
+pendingChip.addEventListener('click', () => {
+  pendingOnly = !pendingOnly;
+  pendingChip.classList.toggle('on', pendingOnly);
+  render();
+});
+
+const si = document.getElementById('search'), cl = document.getElementById('clear');
+si.addEventListener('input', () => {
+  q = si.value.trim().toLowerCase();
+  cl.style.display = q ? 'block' : 'none';
+  render();
+});
+cl.addEventListener('click', () => { si.value = ""; q = ""; cl.style.display = 'none'; render(); si.focus(); });
+
+function pills(entries){
+  if (!entries.length) return '<span class="pill none">—</span>';
+  return entries.map(entry => {
+    const cls = entry.eligibility === 'unverified' ? 'p' : entry.style;
+    const stale = entry.is_stale ? ' stale' : '';
+    const mark = entry.eligibility === 'unverified' ? '?' : '';
+    const checked = entry.checked_at ? ' · ตรวจ ' + entry.checked_at : '';
+    const title = entry.eligibility_label + ' · ' + entry.basis_label + checked
+                + (entry.conflict ? ' · ⚠ ' + entry.conflict : '');
+    return '<span class="pill ' + cls + stale + '" title="' + esc(title) + '">'
+         + esc(entry.label + mark) + '</span>';
+  }).join('');
+}
+
+function hasPending(e){
+  return META.platforms.some(p => (e[p.id] || []).some(x => x.eligibility === 'unverified'));
+}
+
+function card(e){
+  const head =
+    '<div class="card-head"><div>' +
+      '<div class="brand">' + esc(e.brand) + '</div>' +
+      '<div class="model">' + esc(e.model) + '</div>' +
+      '<div class="meta">' + esc(e.body) + ' · ' + esc(e.seats) + ' ที่นั่ง</div>' +
+    '</div><span class="status ' + esc(e.launch_css) + '">' + esc(e.launch_text) + '</span></div>';
+
+  const empty = META.platforms.every(p => (e[p.id] || []).length === 0);
+  if (empty){
+    return '<div class="card">' + head +
+      '<div class="note warn">ไม่เข้าเกณฑ์ของทั้งสองแอป — ' + esc(e.body) + '</div></div>';
+  }
+
+  const apps = '<div class="apps">' + META.platforms.map(p =>
+      '<div class="app ' + esc(p.id) + '">' +
+        '<div class="app-t">' + esc(p.name.toUpperCase()) + '</div>' +
+        '<div class="cat">' + pills(e[p.id] || []) + '</div>' +
+      '</div>').join('') + '</div>';
+
+  let extra = '';
+  if (e.note) extra += '<div class="note">' + esc(e.note) + '</div>';
+  if (e.data_issue) extra += '<div class="note issue">⚠ ' + esc(e.data_issue) + '</div>';
+  return '<div class="card">' + head + apps + extra + '</div>';
+}
+
+function render(){
+  const rows = DATA.filter(e => {
+    if (brandF && e.brand !== brandF) return false;
+    if (stF && e.launch_status !== stF) return false;
+    if (pendingOnly && !hasPending(e)) return false;
+    if (q && !(e.brand + ' ' + e.model).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const pending = rows.filter(hasPending).length;
+  document.getElementById('count').innerHTML =
+    'พบ <b>' + rows.length + '</b> รุ่น' + (pending ? ' · มีหมวดรอตรวจสอบ <b>' + pending + '</b> รุ่น' : '');
+  const box = document.getElementById('results');
+  box.innerHTML = rows.length
+    ? rows.map(card).join('')
+    : '<div class="empty">ไม่พบรุ่นที่ค้นหา ลองพิมพ์ยี่ห้อ เช่น BYD, MG, Tesla</div>';
+}
+
+// แถบบน + ท้ายหน้า สร้างจาก META ไม่ใช่ข้อความตายตัวในไฟล์
+document.getElementById('banner').innerHTML =
+  '<b>ข้อมูล ณ ' + esc(META.as_of) + '</b> · ข้อกล่าวอ้างทั้งหมด ' + esc(META.claim_count) +
+  ' แถว · เกินอายุ ' + esc(META.stale_days) + ' วัน ' + esc(META.stale_count) + ' แถว' +
+  (META.not_surveyed.length
+    ? ' · <b>ยังไม่ได้สำรวจ:</b> ' + META.not_surveyed.map(c => esc(c.label)).join(', ')
+    : '');
+
+document.getElementById('foot').innerHTML =
+  '<b>วิธีอ่าน:</b> สีของป้ายบอก <i>ที่มา</i> ของข้อสรุป ไม่ใช่ระดับความดี · ' +
+  'เครื่องหมาย <b>?</b> = ยังไม่ได้ตรวจกับรายการจริง (ไม่ใช่ "ไม่ผ่าน") · ' +
+  'ขอบประ = ข้อมูลเก่ากว่ากำหนด' +
+  '<ul>' + META.platforms.map(p => '<li>' + esc(p.note) + '</li>').join('') +
+  (META.not_surveyed.length
+    ? '<li>หมวดที่ยังไม่ได้สำรวจเลย: ' + META.not_surveyed.map(c => esc(c.label)).join(', ') +
+      ' — ไม่มีข้อกล่าวอ้างแม้แต่แถวเดียว จึงไม่แสดงบนการ์ด</li>'
+    : '') +
+  '</ul>';
+
+render();
+</script>
+</body>
+</html>

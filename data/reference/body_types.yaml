@@ -1,0 +1,36 @@
+# L0 REFERENCE — ประเภทตัวถัง
+#
+# แก้ปัญหา: ระบบเดิมมี 18 ค่าอิสระ ปนไทย-อังกฤษ มี 8 วิธีสะกดคำว่า "SUV"
+# ทั้งที่ตัวถังเป็นตัวตัดสินสิทธิ์จริง (กระบะถูกตัดออก · GrabSUV อิงตัวถัง)
+#
+# หลักการ: แยก "ประเภท" (ฟิลด์นี้) ออกจาก "ขนาด" (size_class ใน L1)
+# aliases = ค่าเดิมทั้งหมดที่เคยพบ ใช้โดย tools/migrate_legacy.py และ validate
+
+- id: sedan
+  label: Sedan
+  label_th: ซีดาน
+  aliases: ["Sedan", "Sedan/GT", "Sedan/Wagon", "Sedan/Fastback", "Shooting Brake"]
+
+- id: hatchback
+  label: Hatchback
+  label_th: แฮตช์แบ็ก
+  aliases: ["Hatchback", "Hatchback เล็ก", "City car"]
+
+- id: suv
+  label: SUV
+  label_th: เอสยูวี
+  aliases: ["SUV", "SUV เล็ก", "SUV ใหญ่", "SUV/Crossover", "SUV/Coupe",
+            "Coupe/SUV", "MPV/SUV", "Hatchback/SUV"]
+
+- id: mpv
+  label: MPV
+  label_th: เอ็มพีวี
+  aliases: ["MPV"]
+
+- id: pickup
+  label: Pickup
+  label_th: กระบะ
+  aliases: ["กระบะ EV"]
+  # ธงนี้คือที่อยู่ใหม่ของกฎ "รถกระบะ ทั้ง 2 แอปไม่รับ"
+  # เดิมเป็น hardcode `e["gcar"] == "-"` กระจายอยู่ใน build.py และ template
+  eligible_for_ridehailing: false
