@@ -140,6 +140,7 @@ def load_vehicles(path: Path = VEHICLES_PATH) -> list[Vehicle]:
                 specs=dict(rec.get("specs") or {}),
                 note=rec.get("note", ""),
                 data_issue=rec.get("data_issue", ""),
+                added_at=rec.get("added_at", ""),
                 sources=list(rec.get("sources") or []),
             )
         )

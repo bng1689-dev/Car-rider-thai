@@ -2,8 +2,10 @@
 """แปลงข้อมูลเดิม ev-project/ev_data.json → โครงสร้างใหม่ L1 + L2
 
 รันครั้งเดียวตอนย้ายระบบ · รันซ้ำได้ (idempotent) · ไม่แก้ไฟล์ต้นทาง
+ถ้าข้อมูลปัจจุบันมีแถวที่เพิ่มหลังย้ายระบบ (รถรุ่นใหม่ ผลตรวจที่นำเข้า) จะไม่ยอม
+เขียนทับ เพราะแถวเหล่านั้นจะหายไป — ใช้ --force เมื่อตั้งใจล้างกลับเป็นข้อมูลเดิม
 
-    python tools/migrate_legacy.py [--dry-run]
+    python tools/migrate_legacy.py [--dry-run] [--force]
 
 สิ่งที่สคริปต์นี้ทำ
   1. ตั้ง vehicle_id (slug) ให้ทุกคัน — แก้ปัญหาชื่อรุ่นซ้ำ (ES, X)
@@ -27,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from evbuild.loader import (  # noqa: E402
-    ELIGIBILITY_PATH, VEHICLES_PATH, load_reference, write_jsonl,
+    ELIGIBILITY_PATH, VEHICLES_PATH, load_reference, read_jsonl, write_jsonl,
 )
 
 LEGACY_PATH = ROOT / "ev-project" / "ev_data.json"
@@ -185,6 +187,8 @@ def migrate(legacy: list[dict], reference) -> tuple[list[dict], list[dict], list
             "launch": launch,
             "specs": specs,
             "note": residual_note(note, bool(launch.get("year")), specs, tier is not None),
+            # ทั้ง 117 รุ่นอยู่ในตารางเดิมตอนสำรวจ → การสำรวจ ณ as_of ครอบคลุมทุกคัน
+            "added_at": LEGACY_CHECKED_AT,
             "sources": [
                 {"url": "", "checked_at": LEGACY_CHECKED_AT, "field": "*",
                  "origin": "ev_data.json (legacy import)"}
@@ -233,10 +237,21 @@ def migrate(legacy: list[dict], reference) -> tuple[list[dict], list[dict], list
     return vehicles, claims, notices
 
 
+def rows_not_reproduced(path: Path, records: list[dict]) -> list[dict]:
+    """แถวในไฟล์ปัจจุบันที่ migration สร้างซ้ำไม่ได้ = ข้อมูลที่เพิ่มหรือแก้หลังย้ายระบบ"""
+    if not path.exists():
+        return []
+    reproduced = {json.dumps(r, ensure_ascii=False, sort_keys=True) for r in records}
+    return [rec for _lineno, rec in read_jsonl(path)
+            if json.dumps(rec, ensure_ascii=False, sort_keys=True) not in reproduced]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true",
                         help="แสดงสรุปอย่างเดียว ไม่เขียนไฟล์")
+    parser.add_argument("--force", action="store_true",
+                        help="เขียนทับแม้ข้อมูลปัจจุบันมีแถวที่เพิ่มหลังย้ายระบบ")
     args = parser.parse_args()
 
     reference = load_reference()
@@ -266,6 +281,19 @@ def main() -> int:
     if args.dry_run:
         print("\n--dry-run: ไม่เขียนไฟล์")
         return 0
+
+    discarded = rows_not_reproduced(VEHICLES_PATH, vehicles) \
+        + rows_not_reproduced(ELIGIBILITY_PATH, claims)
+    if discarded and not args.force:
+        print(f"\nไม่เขียนไฟล์ — ข้อมูลปัจจุบันมี {len(discarded)} แถวที่ไม่ได้มาจากข้อมูลเดิม "
+              "และจะหายถ้าเขียนทับ:", file=sys.stderr)
+        for rec in discarded[:10]:
+            label = rec.get("category_id", rec.get("model", ""))
+            print(f"  • {rec.get('vehicle_id')} {label}", file=sys.stderr)
+        if len(discarded) > 10:
+            print(f"  … และอีก {len(discarded) - 10} แถว", file=sys.stderr)
+        print("ใช้ --force ถ้าตั้งใจล้างกลับเป็นข้อมูลเดิม", file=sys.stderr)
+        return 1
 
     write_jsonl(VEHICLES_PATH, vehicles)
     write_jsonl(ELIGIBILITY_PATH, claims)

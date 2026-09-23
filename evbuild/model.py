@@ -20,7 +20,7 @@ BASIS = ("official_list", "manual", "spec_inference", "rule_derived", "coverage_
 
 coverage_sweep = สรุปจาก 'ไม่พบในรายการที่สำรวจครบแล้ว' — เป็นการอนุมานจาก
 การไม่มีหลักฐาน จึงอ่อนที่สุด และใช้ได้เฉพาะหมวดที่ประกาศ coverage_status:
-surveyed เท่านั้น"""
+surveyed เท่านั้น และเฉพาะรถที่อยู่ในชุดข้อมูลแล้ว ณ วันสำรวจ (added_at ≤ as_of)"""
 
 CONFIDENCE = ("high", "medium", "low")
 
@@ -129,6 +129,9 @@ class Vehicle:
     specs: dict[str, Any] = field(default_factory=dict)
     note: str = ""
     data_issue: str = ""   # ความขัดแย้งในข้อมูลที่ต้องให้คนตัดสิน (ห้ามเดาแทน)
+    # วันที่เพิ่มรุ่นนี้เข้าชุดข้อมูล — การสำรวจหมวดที่เสร็จ ณ วันหนึ่ง พูดแทนได้
+    # เฉพาะรถที่มีอยู่ในชุดข้อมูลแล้ว ณ วันนั้น (ดู resolve.covered_by_survey)
+    added_at: str = ""
     sources: list[dict[str, str]] = field(default_factory=list)
 
     @property

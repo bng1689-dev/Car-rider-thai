@@ -1,5 +1,6 @@
 """การตัดสินผลสุดท้าย — ลำดับความสำคัญ ความครบถ้วน และความสด"""
 import unittest
+from dataclasses import replace
 from datetime import date
 
 from evbuild.resolve import PRECEDENCE, resolve_all, resolve_cell
@@ -77,6 +78,54 @@ class TestCoverageStatus(unittest.TestCase):
         result = resolve_cell(make_vehicle(seats=5), category, [], self.reference)
         self.assertIsNotNone(result)
         self.assertEqual(result[0], "ineligible")
+
+
+class TestSurveyOnlySpeaksForVehiclesItSaw(unittest.TestCase):
+    """การสำรวจที่เสร็จ ณ as_of ไม่เคยเห็นรถที่เพิ่มเข้าชุดข้อมูลทีหลัง
+    ถ้าตีความว่า "ไม่ผ่าน" ก็คือ "-" ของระบบเดิมกลับมาอีกครั้ง
+    """
+
+    def setUp(self):
+        self.reference = make_reference()
+        self.premium = self.reference.category_by_id["grab.premium"]   # surveyed
+
+    def test_vehicle_added_after_survey_is_unverified(self):
+        newcomer = make_vehicle(body_type="suv", added_at="2026-09-23")
+        eligibility, basis, *_rest, reason = resolve_cell(
+            newcomer, self.premium, [], self.reference)
+        self.assertEqual((eligibility, basis), ("unverified", None))
+        self.assertIn("2026-09-23", reason)
+        self.assertIn(self.premium.as_of, reason)
+
+    def test_vehicle_present_on_survey_day_is_covered(self):
+        same_day = make_vehicle(body_type="suv", added_at=self.premium.as_of)
+        eligibility, basis, *_ = resolve_cell(same_day, self.premium, [], self.reference)
+        self.assertEqual((eligibility, basis), ("ineligible", "coverage_sweep"))
+
+    def test_unknown_added_at_is_not_swept(self):
+        undated = make_vehicle(body_type="suv", added_at="")
+        eligibility, *_ = resolve_cell(undated, self.premium, [], self.reference)
+        self.assertEqual(eligibility, "unverified")
+
+    def test_resurvey_covers_the_newcomer(self):
+        """สำรวจรอบใหม่ครบแล้วเลื่อน as_of → รถที่เพิ่มก่อนวันนั้นได้ข้อสรุปจากการสำรวจ"""
+        newcomer = make_vehicle(body_type="suv", added_at="2026-09-23")
+        resurveyed = replace(self.premium, as_of="2026-10-01")
+        eligibility, basis, *_ = resolve_cell(newcomer, resurveyed, [], self.reference)
+        self.assertEqual((eligibility, basis), ("ineligible", "coverage_sweep"))
+
+    def test_rules_and_claims_still_apply_to_newcomers(self):
+        """added_at มีผลเฉพาะตอนตีความ "ไม่มีข้อมูล" เท่านั้น"""
+        newcomer = make_vehicle(body_type="sedan", added_at="2026-09-23")
+        car = self.reference.category_by_id["grab.car"]
+        suv = self.reference.category_by_id["grab.suv"]
+        self.assertEqual(resolve_cell(newcomer, car, [], self.reference)[:2],
+                         ("eligible", "rule_derived"))
+        self.assertEqual(resolve_cell(newcomer, suv, [], self.reference)[:2],
+                         ("ineligible", "rule_derived"))
+        claim = make_claim(category_id="grab.premium")
+        self.assertEqual(resolve_cell(newcomer, self.premium, [claim], self.reference)[:2],
+                         ("eligible", "official_list"))
 
 
 class TestConflictAndStaleness(unittest.TestCase):

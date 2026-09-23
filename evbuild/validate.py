@@ -148,6 +148,10 @@ def validate_vehicles(ref: Reference, vehicles: list[Vehicle], v: Validator) -> 
             v.error(where, f"launch.quarter ต้องเป็น 1–4 (พบ {veh.launch.quarter!r})")
         if veh.launch.status in ("announced", "expected") and veh.launch.year is None:
             v.error(where, f"launch.status={veh.launch.status} ต้องระบุ year")
+        # ไม่มีวันที่นี้ = บอกไม่ได้ว่าการสำรวจหมวดไหนเคยตรวจรุ่นนี้แล้ว
+        if not _valid_date(veh.added_at):
+            v.error(where, f"added_at ต้องเป็น YYYY-MM-DD (พบ {veh.added_at!r}) "
+                           "— วันที่เพิ่มรุ่นนี้เข้าชุดข้อมูล")
 
         if veh.doors is None:
             missing_doors.append(veh.vehicle_id)

@@ -41,7 +41,7 @@ class TestPayloadFromRealData(unittest.TestCase):
         self.assertEqual(len(groups["data_issue"]["items"]), 2)
 
     def test_loose_category_is_not_exploded_into_items(self):
-        """Bolt Premium: 115 รุ่นผ่านเกณฑ์เครื่อง — แตกเป็นงานรายคันก็ไม่ได้บอกอะไร"""
+        """Bolt Premium: แทบทุกรุ่นผ่านเกณฑ์เครื่อง — แตกเป็นงานรายคันก็ไม่ได้บอกอะไร"""
         premium = next(g for g in self.payload["queue"] if g["key"] == "not_surveyed:bolt.premium")
         self.assertTrue(premium["loose"])
         self.assertEqual(premium["items"], [])

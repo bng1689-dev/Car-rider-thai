@@ -985,7 +985,7 @@ function renderOverview(){
     <div class="tile"><p class="lab">ผลตรวจที่บันทึกในแอป</p><p class="val">${fmt(s.recorded)}</p><p class="sub">${s.recorded ? "ยังไม่นำเข้าไฟล์ข้อมูล" : "ยังไม่มี"}</p></div>
   </div>`;
 
-  // ความครบถ้วนต่อหมวด — แท่งซ้อนตามสเกลเดียว (117 รุ่น = เต็มแท่ง)
+  // ความครบถ้วนต่อหมวด — แท่งซ้อนตามสเกลเดียว (รถทุกรุ่น = เต็มแท่ง)
   html += `<div class="card"><h3>ความครบถ้วนของแต่ละหมวด</h3>
     <p class="cap">ความยาวเต็มแท่ง = รถทั้ง ${fmt(total)} รุ่น ส่วนที่ว่างคือรุ่นที่ยังไม่มีข้อสรุปในหมวดนั้นเลย "ไม่ผ่าน" กับ "รอตรวจ" ใช้สีต่างตระกูลกันโดยตั้งใจ เพราะไม่รู้ไม่เท่ากับไม่ผ่าน</p>
     <div class="clegend"><span><i class="sw yes"></i>ผ่าน</span><span><i class="sw no"></i>ไม่ผ่าน</span><span><i class="sw pend"></i>รอตรวจ</span><span><i class="sw none"></i>ไม่มีข้อสรุป</span></div>
@@ -1152,11 +1152,21 @@ function toast(msg, bad){
 
 // ── ส่วนหัว + แท็บ ───────────────────────────────────────────────────
 function renderHeader(){
+  // วันที่ตรวจล่าสุดวันเดียวบอกไม่ได้ว่าข้อมูลส่วนใหญ่สดแค่ไหน — ผลตรวจใหม่ไม่กี่แถว
+  // จะทำให้ทั้งหน้าดูสด จึงแสดงสัดส่วนข้อสรุปที่เก่าเกินเพดานคู่กันเสมอ
   const latest = DATA.meta.data_checked_latest;
-  const d = daysSince(latest);
+  let dated = 0, stale = 0;
+  Object.values(DATA.cells).forEach(cells => Object.values(cells).forEach(cell => {
+    const age = daysSince(cell.checked_at);
+    if (age == null) return;
+    dated++;
+    if (age > DATA.meta.stale_days) stale++;
+  }));
+  const days = fmt(DATA.meta.stale_days);
   document.getElementById("fresh").innerHTML = latest
-    ? `ข้อมูลตรวจล่าสุด <b>${esc(thaiDate(latest))}</b>` +
-      (d != null ? ` · <span class="${d > DATA.meta.stale_days ? "stale" : ""}">${fmt(d)} วันก่อน</span>` : "")
+    ? `ตรวจล่าสุด <b>${esc(thaiDate(latest))}</b>` +
+      (stale ? ` · <span class="stale" title="ข้อสรุป ${fmt(stale)} จาก ${fmt(dated)} แถวที่มีวันที่ตรวจ เก่ากว่า ${days} วัน">` +
+               `เก่าเกิน ${days} วัน ${fmt(stale)}/${fmt(dated)}</span>` : "")
     : "";
   const s = queueStats();
   const left = s.total - s.resolved;

@@ -39,6 +39,7 @@ def make_vehicle(**overrides) -> Vehicle:
         launch=Launch(status="on_sale"),
         size_class="standard",
         doors=None,
+        added_at="2025-09-15",      # วันเดียวกับ as_of ของทุกหมวดใน categories.yaml
     )
     base.update(overrides)
     return Vehicle(**base)

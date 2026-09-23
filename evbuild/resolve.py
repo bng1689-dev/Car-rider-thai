@@ -41,6 +41,19 @@ def _staleness(checked_at: str, as_of: date, stale_days: int) -> tuple[int | Non
     return days, days > stale_days
 
 
+def covered_by_survey(vehicle: Vehicle, category: Category) -> bool:
+    """การสำรวจหมวดที่เสร็จ ณ category.as_of ครอบคลุมรถคันนี้หรือไม่
+
+    การสำรวจพูดแทนได้เฉพาะรถที่อยู่ในชุดข้อมูลแล้ว ณ วันสำรวจ รถที่เพิ่มเข้ามา
+    ทีหลังไม่เคยถูกตรวจกับรายการ ถ้าตีความการไม่มีข้อกล่าวอ้างว่า "ไม่ผ่าน"
+    ก็คือการกลบความไม่รู้ให้ดูเหมือนคำตอบ — ปัญหาเดียวกับ "-" ของระบบเดิม
+    ไม่รู้วันที่เพิ่ม = ถือว่าไม่ครอบคลุม (ไม่รู้ ≠ ไม่ผ่าน)
+    """
+    added = _parse_date(vehicle.added_at)
+    surveyed = _parse_date(category.as_of)
+    return added is not None and surveyed is not None and added <= surveyed
+
+
 def _best_claim(claims: list[Claim]) -> Claim:
     """ข้อกล่าวอ้างหลายข้อต่อช่องเดียวกัน — เอาที่น่าเชื่อถือที่สุด
     เสมอกันให้เอาที่ตรวจล่าสุด
@@ -83,9 +96,18 @@ def resolve_cell(
 
     # ไม่มีข้อกล่าวอ้าง และกฎไม่ให้ข้อสรุป → ตีความตามความครบถ้วนของการสำรวจ
     if category.coverage_status == "surveyed":
-        return ("ineligible", "coverage_sweep", "medium", None,
-                category.source_url, category.as_of,
-                "สำรวจหมวดนี้ครบแล้ว ไม่พบรุ่นนี้ในรายการ")
+        if covered_by_survey(vehicle, category):
+            return ("ineligible", "coverage_sweep", "medium", None,
+                    category.source_url, category.as_of,
+                    "สำรวจหมวดนี้ครบแล้ว ไม่พบรุ่นนี้ในรายการ")
+        reason = (
+            f"เพิ่มเข้าชุดข้อมูลเมื่อ {vehicle.added_at} หลังการสำรวจหมวดนี้ "
+            f"({category.as_of}) — ยังไม่เคยตรวจกับรายการจริง"
+            if _parse_date(vehicle.added_at) else
+            f"ไม่ทราบวันที่เพิ่มเข้าชุดข้อมูล — บอกไม่ได้ว่าการสำรวจหมวดนี้ "
+            f"({category.as_of}) เคยตรวจรุ่นนี้แล้วหรือไม่"
+        )
+        return ("unverified", None, None, None, category.source_url, "", reason)
 
     if category.coverage_status == "partial":
         return ("unverified", None, None, None,

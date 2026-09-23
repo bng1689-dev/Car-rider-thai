@@ -45,6 +45,12 @@ class TestVehicleValidation(unittest.TestCase):
         errors = self._errors([make_vehicle(launch=Launch(status="announced"))])
         self.assertTrue(any("year" in e.message for e in errors))
 
+    def test_added_at_is_required(self):
+        """ไม่มีวันที่เพิ่ม = บอกไม่ได้ว่าการสำรวจหมวดไหนเคยตรวจรุ่นนี้"""
+        for bad in ("", "23/09/2026", None):
+            errors = self._errors([make_vehicle(added_at=bad)])
+            self.assertTrue(any("added_at" in e.message for e in errors), bad)
+
 
 class TestClaimValidation(unittest.TestCase):
     def setUp(self):
