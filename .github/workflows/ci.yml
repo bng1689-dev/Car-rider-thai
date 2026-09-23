@@ -30,7 +30,7 @@ jobs:
         run: python tools/diff_legacy.py
 
       - name: สร้าง output (ยกเว้น pdf ที่ต้องใช้ฟอนต์ไทย)
-        run: python -m evbuild build xlsx html csv
+        run: python -m evbuild build xlsx html csv webapp
 
       - uses: actions/upload-artifact@v4
         with:

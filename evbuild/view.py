@@ -168,7 +168,9 @@ def survey_gaps(
     from .rules import body_type_blocks_ridehailing, evaluate
 
     gaps: list[dict[str, Any]] = []
-    for category in sorted(reference.categories, key=lambda c: (c.platform, c.order)):
+    # เรียงตามลำดับแพลตฟอร์มใน platforms.yaml ให้ตรงกับส่วนอื่นของทุก output
+    ordered = [c for p in reference.platforms for c in reference.categories_of(p.id)]
+    for category in ordered:
         if category.coverage_status != "not_surveyed":
             continue
 

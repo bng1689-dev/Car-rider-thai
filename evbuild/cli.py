@@ -3,6 +3,7 @@
     python -m evbuild validate                ตรวจอย่างเดียว (ใช้ใน CI)
     python -m evbuild build                   ตรวจ + สร้าง output ทุกชนิด
     python -m evbuild build xlsx html         เลือกเฉพาะบางชนิด
+    python -m evbuild build webapp            เว็บแอป + ไฟล์ส่งออก (outputs/webapp/)
     python -m evbuild report coverage         หมวด/รุ่นไหนยังไม่ได้ตรวจ
     python -m evbuild report stale --days 90  ข้อมูลเก่าเกินกำหนด
     python -m evbuild report qa               จุดที่ต้องให้คนตัดสิน
@@ -24,7 +25,7 @@ from .render import OUTPUTS
 from .resolve import DEFAULT_STALE_DAYS, resolve_all
 from .validate import validate_logic, validate_structure
 
-RENDERERS = ("xlsx", "html", "pdf", "csv")
+RENDERERS = ("xlsx", "html", "pdf", "csv", "webapp")
 
 
 def _parse_as_of(value: str | None) -> date:
